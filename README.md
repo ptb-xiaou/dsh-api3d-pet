@@ -6,7 +6,7 @@ DSH（DeepSeek Harness）Web 界面右下角的常驻桌宠挂件：鲸鱼气泡
 
 > 🐋 **这是 API3D（api3d.cn）站点专属版**：主气泡余额取自站点账单接口（`billing/subscription` 的 `balance` + 当日 `billing/usage` 的 `total_usage_usd`），站点地址 / 凭据名 / 币种 / 接口与字段**全部内置** —— 装好后只需填一次 API Key。已移除上游的官方 DeepSeek 余额链路、多厂商模板、Codex 本机会话统计与厂商额度接口。
 
-> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.4.3`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.4.3)）
+> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.4.4`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.4.4)）
 
 ## 安装（DSH Web）
 
@@ -30,7 +30,7 @@ dsh plugin --profile web add link:<本目录绝对路径>
 - 🐋 **常驻自启**：随 DSH Web 界面每次打开自动出现（标准 DSH bundle 插件）
 - 💰 **余额**：60 秒自动刷新 + 点击鲸鱼手动刷新；余额变化时数字**滚动动画**；瞬时网络抖动自动沿用最近余额不报错。**余额来源 = 内置的 API3D 站点**（本副本已移除官方 DeepSeek 余额逻辑）：只要在「API3D 站点设置」里填一次 API Key，地址与接口字段都是插件内置的，取站点 OpenAI 兼容 billing 口径的 `balance` 与当日 `total_usage_usd`（金额即人民币，不折算）；**还没填 key 时主气泡如实报 `NO_KEY`，不会去请求任何官方接口**
 - 🔤 **气泡文字自动适配**（本副本改动）：站点金额位数不可控（`¥ 0.000075`、`¥ 12345.67`…），所以气泡三行字号比上游小约 20%，且**超宽的行会自动等比缩小**（最多缩到 55%），挂件被拖大/缩小或窗口尺寸变化后会按新的宽度重算 —— 不会再顶出泡泡边界；自定义模板块里的字号仍是各模块自己的设置
-- 📊 **今日已用 · 两个口径要分清**：**主气泡**里的「今日已用（本 key）」来自站点 usage 接口，是**当前这把 key 当天实际扣费**（它的余额本身是账号口径，一把 key 查到的余额是整账号的）；而「API3D 记账」面板 / 记录里的**「已观测消费」是账号余额下降额**按观测累计出的估算（不需要任何令牌）。余额**下降**按观测累计为消费，余额**上升**（充值 / 赠金）单独记录、不会冲掉已有消费；检测到余额增加会提示「待核对余额调整」，可在「API3D 记账 → **你配置的来源模型 → 设置 → 余额校正**」按实际累计到账金额与非调用扣减校正 —— **「已观测消费」与「余额校正」都是该来源账户口径**（由该来源的余额观测得出，不含其它厂商；「本机模型费用」才是所有模型的本地估算）（逐轮明细保留 90 天或最多 2 万条、逐日归档保留 365 天，超期数据归档到 `.dshw-usage-archive.json`）；金额按 8 位小数记账、显示保留两位
+- 📊 **今日已用 · 两个口径要分清**：**主气泡**里的「今日已用」来自站点 usage 接口 —— 默认按 `scope=user` 取**该账号全部 key 当天的合计**（标签「今日已用（账号）」，与站点余额同为用户口径）；站点回显 `scope=key` 或老站点没这个字段时退回**当前这把 key 当天扣费**（标签「今日已用（本 key）」）。而「API3D 记账」面板 / 记录里的**「已观测消费」是账号余额下降额**按观测累计出的估算（不需要任何令牌）。余额**下降**按观测累计为消费，余额**上升**（充值 / 赠金）单独记录、不会冲掉已有消费；检测到余额增加会提示「待核对余额调整」，可在「API3D 记账 → **你配置的来源模型 → 设置 → 余额校正**」按实际累计到账金额与非调用扣减校正 —— **「已观测消费」与「余额校正」都是该来源账户口径**（由该来源的余额观测得出，不含其它厂商；「本机模型费用」才是所有模型的本地估算）（逐轮明细保留 90 天或最多 2 万条、逐日归档保留 365 天，超期数据归档到 `.dshw-usage-archive.json`）；金额按 8 位小数记账、显示保留两位
 - 🧮 **本机模型费用（本地估算）**：只统计**本机 DSH 会话**里跑过的对话 —— 按真实 usage × 内置价目表换算，与站点口径的「今日已用」互不影响；本机还没跑过对话时它就是 `¥ 0.00`（不是定价出错）
 - 📅 **使用记录从启用那天起算**（本副本改动）：账本记下本插件**开始记账的日期**（`installedDay`），「API3D 记账」里的标题随可用天数显示「今日使用记录 / 近 N 天使用记录」（最多 7 天），**不显示安装/启用之前的空日期**
 - 💬 **每轮对话消耗**：监听 DSH 本机会话事件，按模型**真实 usage**（input / cache / output / reasoning tokens）换算金额，每轮结束弹出消耗泡泡；可开关、自动关闭秒数可设（0 = 不自动关闭），**泡泡内容可自定义**（模块化，金额用 `{cost}` 引用），入口：菜单 → 「音效与提示」→ 「全局设置」→ 展开「每轮消耗提示」→「编辑提示内容」
@@ -93,7 +93,7 @@ dsh plugin --profile web add link:<本目录绝对路径>
 
 - 🔑 **只填 key**：「API3D 记账 → API3D 站点设置」里只有一行 **API Key**；密钥写入 DSH 官方凭据服务（键名 `API3D_API_KEY`，固定），配置文件里不含密钥。换 key 时粘贴新的覆盖即可，「删除密钥」按钮清除
 - 💰 **余额**：`GET https://api3d.cn/dashboard/billing/subscription` 读 `balance`（兼容 `hard_limit_usd`）；点「测试连通性」可先验证 key
-- 📉 **今日已用**：`GET https://api3d.cn/dashboard/billing/usage?start_date={today}&end_date={today}` 读 `total_usage_usd`（精确值）—— 直接是**站点当天的实际扣费**，不再用「余额下降额」估算
+- 📉 **今日已用**：`GET https://api3d.cn/dashboard/billing/usage?start_date={today}&end_date={today}&scope=user` 读 `total_usage_usd`（精确值）—— 直接是**站点当天的实际扣费**，不再用「余额下降额」估算；`scope=user` 让站点按**账号全部 key 合计**统计（响应回显 `scope`，据此把标签写成「今日已用（账号）」或退回「今日已用（本 key）」）
 - 💴 **金额就是人民币**：站点返回的数值**不做任何汇率折算**（字段名里的 `_usd` 是 OpenAI 兼容口径的遗留命名，站点 owner 已确认口径为人民币），站点给多少就显示多少
 - 🎯 **额度（可选，手动）**：填总量即可，已用**按 DSH 会话 token 累计**（口径 `input + cacheRead + output`，推理 token 已含在 output 内），也可手动填写；支持「不重置 / 每日 / 每月」
 - 💱 **单价**：沿用内置价目表（DeepSeek flash / pro，不分峰谷），界面不再提供自填入口
@@ -132,7 +132,7 @@ dsh plugin --profile web add link:<本目录绝对路径>
 - **单源**：站点只有一份配置，它**天生就是**主气泡来源（`displayAsBalance` 由插件自己置位，用户不用勾）；
 - **没有官方回退**：站点取数失败（超时 / 401 / 500 / 结构异常）⇒ 主气泡直接显示失败原因（`ok:false` + `code`/`error`），控制台另有一条 `[dsh-whale] 余额读取失败 <code> … ｜来源 <模型> @ <原因>`；payload 里另带 `balanceSourceFallback: {id, name, code, error}`。**还没填 key**时是 `code:'NO_KEY'`，界面提示去「API3D 站点设置」填 API Key；
 - **记账分本**：站点余额记在 `relay-<模型id>-<币种>` 这本账里；
-- **「今日已用」单一口径（本副本改动）**：主气泡的今日已用**只认站点 usage 接口**（`usageSource:'api'`，标签「今日已用（本 key）」）—— 站点侧余额是**账号口径**（同一账号多把 key 共用），usage 是**当前这把 key 的当日扣费**，两者含义不同，所以本地账本 / 余额观测口径**不会再往主气泡上盖数字**（面板标题「本机模型费用（本地估算）」才是本地口径）；`/dsh-whale/usage-records.json` 的刷新只写面板，不参与主气泡。站点 usage 这次取不到时，payload 给 `todayUsage:null` + `todayUsageUnavailable:true`，前端**沿用上一次显示的数字**（标签加「· 取数失败」），绝不会换成另一个口径的数字；
+- **「今日已用」单一口径（本副本改动）**：主气泡的今日已用**只认站点 usage 接口**（`usageSource:'api'`）—— 站点侧余额是**账号口径**（同一账号多把 key 共用），用量默认也走**账号口径**（请求带 `scope=user`，站点回显 `scope` 后标签写「今日已用（账号）」；老站点回显 `key` 或没有该字段时退回标签「今日已用（本 key）」）；本地账本 / 余额观测口径**不会再往主气泡上盖数字**（面板标题「本机模型费用（本地估算）」才是本地口径）；`/dsh-whale/usage-records.json` 的刷新只写面板，不参与主气泡。站点 usage 这次取不到时，payload 给 `todayUsage:null` + `todayUsageUnavailable:true`，前端**沿用上一次显示的数字**（标签加「· 取数失败」），绝不会换成另一个口径的数字；
 - **「API3D 记账」列表里不显示模型行**：只有区块标题 **API3D 站点**（右边两颗浅色 chip：**提醒 / 预算** 打开站点的余额预警 / 今日预算 / 额度（手填）、**刷新** 强制重取站点数据），下面一行 **API3D 站点设置** 用来填 key。余额 / 今日已用 / 分组这些数字只在主气泡、站点设置面板与「关于 / 自检」里出现，列表不重复；宿主内部仍保留 `deepseek*` 的计价 / 记账锚点（`matchIds`，不查余额接口、不联网）；
 - 版号后缀 **`-relay`**（菜单底部与「关于 / 自检」可见），便于和上游发布版区分。
 
@@ -353,7 +353,7 @@ dsh plugin --profile web add dsh-api3d-pet
   - 站点条目**恒为**主气泡余额来源（`displayAsBalance` 由插件置位），不需要「主气泡余额来源」勾选框；地址是内置可信端点，也不需要「允许把凭据发送到自定义地址」
 - 取数：`GET https://api3d.cn/dashboard/billing/subscription` 的 `balance`（兼容 `hard_limit_usd`）= 当前余额；`GET https://api3d.cn/dashboard/billing/usage?start_date={today}&end_date={today}` 的 `total_usage_usd` = 当日已用（`{today}` 按 Asia/Shanghai 取当天）。**金额即人民币，不做汇率折算。**
 - 取数失败**不会回退官方**：主气泡如实报错，`balance.json` 里附 `balanceSourceFallback`（来源 id/名称、错误码、原始文案）。
-- 账本按来源分本（scope = `relay-<模型id>-<币种>`）；主气泡的今日已用**只认站点 usage 接口**（`usageSource:'api'`）；站点 usage 单独失败时给 `todayUsage:null` + `todayUsageUnavailable:true`（前端沿用上一次的数字），**不会**改用本地账本 / 余额下降差——站点余额是账号口径、usage 是当前 key 口径，混用会让「今日已用」来回跳。
+- 账本按来源分本（scope = `relay-<模型id>-<币种>`）；主气泡的今日已用**只认站点 usage 接口**（`usageSource:'api'`，请求带 `scope=user` 取账号级合计，站点回显 `scope` 决定标签写「账号」还是「本 key」）；站点 usage 单独失败时给 `todayUsage:null` + `todayUsageUnavailable:true`（前端沿用上一次的数字），**不会**改用本地账本 / 余额下降差——站点余额/账号用量与本地账本口径不同，混用会让「今日已用」来回跳。
 
 > **不需要** `DEEPSEEK_PLATFORM_TOKEN`。早期版本的"实时·令牌"模式已下线，今日已用统一由**API3D 记账**（余额差 + 会话事件）计算，零令牌开箱即用。
 
