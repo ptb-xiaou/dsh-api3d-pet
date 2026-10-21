@@ -170,12 +170,69 @@ const contractCheck = ({ clientPath, hostPath, keys }) => {
 
 // 判定前必须剥掉注释与字符串字面量：否则"注释里提到键名"会被当成读取方
 //   （实测踩过：给 showCostBubble 写了一句含 `events.turnCost.bubbleOn` 的说明，契约层立刻被骗过）
-const stripCommentsAndStrings = (s) => s
-  .replace(/\/\*[\s\S]*?\*\//g, ' ')
-  .replace(/\/\/[^\n]*/g, ' ')
-  .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
-  .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
-  .replace(/`(?:[^`\\]|\\.)*`/g, '``')
+// v0.6.4 改成**单遍状态机**：原来的正则链（先块注释 → 再行注释 → 再字符串）有两个互相踩的坑 ——
+//   ① `//` 注释里写路由通配 `/dsh-whale/*`，其中的 `/*` 被当成块注释开头；
+//   ② 字符串/行内脚本/正则里的 `/*` 同样被当成块注释开头。
+//   只要全文任何位置出现一个 `*/`（例如新写一段 `/** … */` 文档注释），它就会与那个 `/*` 配对，
+//   一口气吃掉上百 KB 源码 —— 实测使 8 个设置键的读点凭空消失、gate 误报"可疑死键"。
+//   状态机按「代码 / 行注释 / 块注释 / 字符串 / 正则」逐字符走，引号与换行都保留（行号不乱）。
+const stripCommentsAndStrings = (src) => {
+  const regexAllowed = (prev) => prev === '' || '([{,;:=!&|?+-*%^~<>'.includes(prev)
+  let out = ''
+  let i = 0
+  let prev = ''
+  const n = src.length
+  while (i < n) {
+    const c = src[i]
+    const c2 = src[i + 1]
+    if (c === '/' && c2 === '/') {
+      while (i < n && src[i] !== '\n') { out += ' '; i++ }
+      continue
+    }
+    if (c === '/' && c2 === '*') {
+      out += '  '
+      i += 2
+      while (i < n && !(src[i] === '*' && src[i + 1] === '/')) { out += src[i] === '\n' ? '\n' : ' '; i++ }
+      if (i < n) { out += '  '; i += 2 }
+      continue
+    }
+    if (c === '/' && regexAllowed(prev)) {
+      out += '/'
+      i++
+      let inClass = false
+      while (i < n) {
+        const ch = src[i]
+        if (ch === '\\') { out += '  '; i += 2; continue }
+        if (ch === '\n') break
+        if (ch === '[') inClass = true
+        else if (ch === ']') inClass = false
+        else if (ch === '/' && !inClass) { out += '/'; i++; break }
+        out += ' '
+        i++
+      }
+      prev = '/'
+      continue
+    }
+    if (c === "'" || c === '"' || c === '`') {
+      const q = c
+      out += q
+      i++
+      while (i < n) {
+        const ch = src[i]
+        if (ch === '\\') { out += '  '; i += 2; continue }
+        if (ch === q) { out += q; i++; break }
+        out += ch === '\n' ? '\n' : ' '
+        i++
+      }
+      prev = q
+      continue
+    }
+    out += c
+    if (!/\s/.test(c)) prev = c
+    i++
+  }
+  return out
+}
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
 if (isMain) {
