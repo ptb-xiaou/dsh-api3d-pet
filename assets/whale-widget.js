@@ -1011,7 +1011,7 @@ var css = [
   '.dshwv-view-in{animation:dshwvViewIn .1s ease}',
   '.dshwv-usage-sec{display:flex;justify-content:space-between;align-items:center;margin:2px 0 2px;font-weight:600;border-bottom:1px solid rgba(32,49,112,.15);padding-bottom:3px;white-space:nowrap}',
   '.dshwv-usage-total{color:#e0433f;font-weight:700}',
-  '.dshwv-usage-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:2px 0;min-width:0}',
+  '.dshwv-usage-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:2px 0;min-width:0}',
   // 用量列表容器（今日模型消费 / 近7天使用记录）：不限制高度，随内容自然增长
   '.dshwv-usage-scroll{overflow-y:auto;overflow-x:hidden;padding-right:2px;margin:2px 0 2px;border:1px solid rgba(32,49,112,.12);border-radius:6px}',
   // 消费记录(全部)新组件:概览头/可折叠分区/天折叠明细
@@ -1029,7 +1029,9 @@ var css = [
   '.dshwv-usage-scroll::-webkit-scrollbar-track{background:transparent}',
   '.dshwv-usage-scroll::-webkit-scrollbar-thumb{background:rgba(32,49,112,.14);border-radius:3px}',
   '.dshwv-usage-scroll::-webkit-scrollbar-thumb:hover{background:rgba(32,49,112,.26)}',
-  '.dshwv-usage-model{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+  // fork：模型名不再用「固定窄列 + 悬浮跑马灯」——整段文本换行显示（左对齐），金额右对齐不裁切
+  '.dshwv-usage-model{flex:1 1 auto;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word;text-align:left;line-height:1.35;overflow:visible;text-overflow:clip}',
+  '.dshwv-usage-amt{flex:0 0 auto;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}',
   // 列宽受限 + 悬浮滚动（配合 mkScrollCell）：外层裁切，内层整体平移
   '.dshwv-marq{overflow:hidden;min-width:0;white-space:nowrap}',
   '.dshwv-marq>span{display:inline-block;white-space:nowrap;will-change:transform}',
@@ -1055,7 +1057,8 @@ var css = [
   '.dshwv-usage-chartwrap canvas{display:block;width:100%;height:150px;background:#fafbfe;border:1px solid rgba(32,49,112,.15);border-radius:8px;box-sizing:border-box}',
   '.dshwv-usage-tip{position:absolute;pointer-events:none;background:rgba(15,23,42,.88);color:#fff;font-size:11px;padding:3px 7px;border-radius:5px;white-space:nowrap;z-index:5}',
   '.dshwv-usage-ratio{display:flex;align-items:center;gap:8px;margin:3px 0}',
-  '.dshwv-usage-ratio-label{flex:0 0 96px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#203170}',
+  // fork：占比图里的模型名同样不裁切 —— 固定 96px 列内换行显示完整名称
+  '.dshwv-usage-ratio-label{flex:0 0 96px;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.3;color:#203170}',
   '.dshwv-usage-ratio-track{flex:1;min-width:0;height:10px;border-radius:5px;background:rgba(32,49,112,.12);min-width:0}',
   '.dshwv-usage-ratio-fill{height:100%;border-radius:5px;min-width:0;max-width:100%}',
   '.dshwv-usage-ratio-pct{flex:0 0 42px;text-align:right;color:#203170;font-size:11px;white-space:nowrap}',
@@ -6032,10 +6035,13 @@ function fillUsagePanel(d) {
     todayModels.forEach(function (row) {
       var r = document.createElement('div')
       r.className = 'dshwv-usage-row'
-      var n = mkScrollCell(usageModelLabel(row.model), 'dshwv-usage-model', { flex: '0 0 70px', boxSizing: 'border-box' })
+      var n = document.createElement('div')
+      n.className = 'dshwv-usage-model'
+      n.textContent = usageModelLabel(row.model)
       n.title = String(row.model || '未知')
       r.appendChild(n)
       var c = document.createElement('span')
+      c.className = 'dshwv-usage-amt'
       c.textContent = usageMoney(row.cost)
       r.appendChild(c)
       todayBox.appendChild(r)
@@ -6074,6 +6080,7 @@ function fillUsagePanel(d) {
     n.title = row.label || ''
     r.appendChild(n)
     var c = document.createElement('span')
+    c.className = 'dshwv-usage-amt'
     c.textContent = usageMoney(row.total, row.currency)
     r.appendChild(c)
     daysBox.appendChild(r)
