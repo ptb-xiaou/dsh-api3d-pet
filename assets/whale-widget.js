@@ -2824,9 +2824,12 @@ function aboutRender() {
   row('宿主文件', aboutShortOf(b.host), aboutFileFull('宿主文件', b.host))
   row('前端文件', aboutShortOf(b.widget), aboutFileFull('前端文件', b.widget))
   var lits = (p.hostVersionLiterals || [])
-  var consistent = lits.length > 0 && lits.every(function (x) { return x === p.version })
-  row('版本自洽', consistent ? '一致' : '不一致', '版本自洽: ' + (consistent ? '一致' : '不一致') + '（源码字面量 ' + (lits.join(' / ') || '?') + ' vs 上报 ' + (p.version || '?') + '）',
-    consistent ? 'dshwv-about-ok' : 'dshwv-about-bad')
+  // v826（自检发现）：宿主从 0.5.0 起版本号只剩 `BUILD_VERSION` 一个来源，源码里没有 `version: 'x.y.z'`
+  //   字面量了 —— 旧判定 `lits.length > 0 && …` 会把"没有字面量"误报成「不一致」。零字面量 = 一致（单源）。
+  var litsOk = lits.length === 0 || lits.every(function (x) { return x === p.version })
+  var litText = lits.length === 0 ? '一致（单源）' : (litsOk ? '一致' : '不一致')
+  row('版本自洽', litText, '版本自洽: ' + litText + '（源码字面量 ' + (lits.join(' / ') || '无，版本号只有 BUILD_VERSION 一个来源') + ' vs 上报 ' + (p.version || '?') + '）',
+    litsOk ? 'dshwv-about-ok' : 'dshwv-about-bad')
   row('宿主含开发机路径', b.hostHasDevPaths === true ? '是（开发版）' : b.hostHasDevPaths === false ? '否' : '未知',
     '宿主含开发机路径: ' + (b.hostHasDevPaths === true ? '是' : b.hostHasDevPaths === false ? '否' : '未知') + '（true = 这份宿主是开发版，未走 strip）',
     b.hostHasDevPaths === true ? 'dshwv-about-bad' : 'dshwv-about-ok')
