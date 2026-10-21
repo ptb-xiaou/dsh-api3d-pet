@@ -6,7 +6,7 @@ DSH（DeepSeek Harness）Web 界面右下角的常驻桌宠挂件：鲸鱼气泡
 
 > 🐋 **这是 API3D（api3d.cn）站点专属版**：主气泡余额取自站点账单接口（`billing/subscription` 的 `balance` + 当日 `billing/usage` 的 `total_usage_usd`），站点地址 / 凭据名 / 币种 / 接口与字段**全部内置** —— 装好后只需填一次 API Key。已移除上游的官方 DeepSeek 余额链路、多厂商模板、Codex 本机会话统计与厂商额度接口。
 
-> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.4.4`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.4.4)）
+> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.5.0`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.5.0)）
 
 ## 安装（DSH Web）
 
@@ -36,6 +36,7 @@ dsh plugin --profile web add link:<本目录绝对路径>
 - 💬 **每轮对话消耗**：监听 DSH 本机会话事件，按模型**真实 usage**（input / cache / output / reasoning tokens）换算金额，每轮结束弹出消耗泡泡；可开关、自动关闭秒数可设（0 = 不自动关闭），**泡泡内容可自定义**（模块化，金额用 `{cost}` 引用），入口：菜单 → 「音效与提示」→ 「全局设置」→ 展开「每轮消耗提示」→「编辑提示内容」
 - ⛰️ **峰谷定价**：工作日高峰 9:00–12:00、14:00–18:00（北京时间），其余空闲；2026-08-23 起**周末全天谷价**。峰谷模块支持状态文字、倒计时、"梁文峰谷 / !?强强?! / 简洁"等多种样式
 - 📒 **用量记录窗口**：今日模型消费、近 7 天、全部记录；模型占比条；按日期展开逐条明细（含时间与金额）；支持按日期或**模型名搜索**；模型名带友好标注（`deepseek-flash` → `DeepSeek-V4.1-Flash`，旧名标注"同 V4.1 Flash"）
+- ⬆️ **一键升级**（本副本新增）：DSH 插件管理器**没有更新功能**，所以插件自带一条升级路径 ——「关于 / 自检」顶部检查更新，有新版且这份是 **npm 装进 profile 的**时出现一行 **升级**：点它 → 弹确认框（当前 → 目标、约 5.5 MB、装好需重启 DSH）→ 点「确认升级」才真的开始；宿主在 profile 目录里跑 `pnpm add dsh-api3d-pet@<新版>`（优先用应用自带的 pnpm v11，避免 `ERR_PNPM_UNEXPECTED_STORE`），装完校验版本号，**升级前备份 `package.json` / `pnpm-lock.yaml`，失败或版本不符自动回滚**。开发目录（含 `.git`）与软链（`link:`）安装**不出按钮**（显示一行说明），升级记录写在 `$DSH_HOME/.dshw-update.log`。详见下面「一键升级」一节
 
 ### 交互
 
@@ -136,7 +137,27 @@ dsh plugin --profile web add link:<本目录绝对路径>
 - **「API3D 记账」列表里不显示模型行**：只有区块标题 **API3D 站点**（右边两颗浅色 chip：**提醒 / 预算** 打开站点的余额预警 / 今日预算 / 额度（手填）、**刷新** 强制重取站点数据），下面一行 **API3D 站点设置** 用来填 key。余额 / 今日已用 / 分组这些数字只在主气泡、站点设置面板与「关于 / 自检」里出现，列表不重复；宿主内部仍保留 `deepseek*` 的计价 / 记账锚点（`matchIds`，不查余额接口、不联网）；
 - 版号后缀 **`-relay`**（菜单底部与「关于 / 自检」可见），便于和上游发布版区分。
 
-**验证**：不连真站点也能跑通 —— 仓库外有一份假站点 + 假宿主的端到端用例（`E:\DSH\DSH-Test\test\relay-balance.mjs`，覆盖取数、当日已用、分组、分本、站点单条、来源报错、401、缺 key、零配置保存七条路径，共 60 条断言）。
+**验证**：不连真站点也能跑通 —— 仓库外有一份假站点 + 假宿主的端到端用例（`E:\DSH\DSH-Test\test\relay-balance.mjs`，覆盖取数、当日已用（账号 / 本 key 两种口径）、分组、分本、站点单条、来源报错、401、缺 key、零配置保存等路径，共 72 条断言）。
+
+### 一键升级（关于面板里的「升级」按钮，本副本新增）
+
+DSH 的插件管理器**没有更新功能**（它的文案就是「插件安装后暂不支持自动更新。若需升级，请先卸载再安装新版」），所以本插件自带一条升级路径：
+
+1. 打开「关于 / 自检」→ 顶部 **检查更新** 会去 npm 的五个源并行查最新版；
+2. 有新版、**并且这份是按 npm 装进 profile 的**时，下面会出现一行 **升级**（文案 `升级到 x.y.z（点击确认）`）；
+3. 点它 → 弹确认框（当前 → 目标、约 5.5 MB、**装好后需要重启 DSH**）→ 点「确认升级」才真的开始；
+4. 宿主半在 profile 目录里跑 `pnpm add dsh-api3d-pet@<新版>`，装完**校验 `node_modules` 里的版本号**；重启 DSH 后生效。
+
+几条边界（写进了实现，不是"约定"）：
+
+- **只对 profile 安装生效**：开发目录（含 `.git`）与软链（`link:`）安装**不出按钮**（显示一行说明，提示 `git pull` / 更新本地仓库）—— 一键升级绝不会把源码 checkout 换成 npm 包；
+- **pnpm 用应用自带的那个**（`<应用目录>/resources/app/node_modules/pnpm`，实测 v11）：profile 的 `node_modules` 是 pnpm v11 store 链，PATH 上的 v10 会 `ERR_PNPM_UNEXPECTED_STORE`；可用 `DSHW_PNPM_BIN` 覆盖（自建环境 / 测试用）；
+- **升级前备份** profile 的 `package.json` 与 `pnpm-lock.yaml`：`pnpm` 非零退出、或**装完版本对不上**，都会自动回滚并在结果里回 `rolledBack:true`；
+- **必须二次确认**：`POST /dsh-whale/update.json` 要求 `confirm` 等于目标版本，缺了直接拒（`CONFIRM_REQUIRED`）；目标不比当前新也会被拒（`ALREADY_LATEST`）；
+- **写栅栏**：这条路由与其它写接口一样只接受**本机来源**（回环 Host / `DSHW_TRUSTED_HOSTS`），非本机请求被拒；
+- 每次尝试都会往 `$DSH_HOME/.dshw-update.log` 追加记录，`/dsh-whale/update-log.json` 返回最近 40 行（排障用）。
+
+**验证**：`node E:\DSH\DSH-Test\test\update-route.mjs` —— 假 profile + 假 pnpm 跑完整升级路径（安装方式判定、成功升级、pnpm 失败回滚、版本不符回滚、五条护栏、写栅栏、软链拒绝），共 30 条断言。
 
 ## 目录结构
 
@@ -438,7 +459,7 @@ curl http://127.0.0.1:3080/dsh-whale/audio.json
 - `/dsh-whale/update-check.json` → 200 JSON：检查更新（`{ok, current, latest, hasUpdate, source}`）；**点了才联网**，镜像优先（npmmirror → jsdelivr → unpkg → npmjs）+ `npm view` 兜底，宿主侧 10 分钟缓存
 - 浏览器 F5 后右下角出现挂件
 
-> ⚠️ **关于上面这些 `curl`**：全部 **26 个** `/dsh-whale/*` 路由都已接入 **DSH 浏览器信任栅栏**（`connection.requestRejection`）。
+> ⚠️ **关于上面这些 `curl`**：全部 **28 个** `/dsh-whale/*` 路由都已接入 **DSH 浏览器信任栅栏**（`connection.requestRejection`）。
 > 因此**不带会话凭据的裸 `curl` 会返回 401**（伪造 `Host` 头则是 403）—— 这是预期行为，不是接口坏了。
 > 想验证接口是否存活，看返回 **401/403** 即说明路由已注册且栅栏在工作；在浏览器里访问同一条路径（带会话）才是 200。
 > 另外**自 0.3.15 起，写请求（`POST`/`PUT`/`PATCH`/`DELETE`）还必须是本机来源**（Host 为 `127.0.0.1`/`localhost`/`[::1]`），否则 403 —— 详见上方「安全边界」。

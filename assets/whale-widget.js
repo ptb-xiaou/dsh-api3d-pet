@@ -2483,6 +2483,13 @@ var aboutSelfResult = null
 var aboutSelfDetail = ''
 var aboutCheckAt = 0
 var aboutUpdateSource = ''
+// v825（用户要求）：一键升级 —— 检查更新的结果决定「升级」这一行出不出现；
+//   点它 → 弹确认框（showConfirm）→ 确认后才 POST 真升级（宿主半跑 pnpm 装 npm 上的新版）。
+var aboutLatestVersion = ''
+var aboutHasUpdate = false
+var aboutCanUpgrade = false
+var aboutInstallMode = ''
+var aboutUpgradeState = ''
 // v805：动作行的登记表（label → { line, val }），用于"只刷新那一行"而不是整屏重画
 var aboutRows = {}
 function aboutUpdateRow(label, text, cls) {
@@ -2807,7 +2814,8 @@ function aboutRender() {
     line.title = hint
     line.addEventListener('click', function (e) {
       try { e.stopPropagation() } catch (err) {}
-      onClick()
+      // v825：允许"只显示不动作"的行（onClick 传 null）—— 例如「有新版本但不能一键升级」的说明行
+      if (typeof onClick === 'function') onClick()
     })
     aboutRows[label] = { line: line, val: valEl }
     if (pending) pending.body.appendChild(line)
@@ -2822,6 +2830,13 @@ function aboutRender() {
   row('宿主含开发机路径', b.hostHasDevPaths === true ? '是（开发版）' : b.hostHasDevPaths === false ? '否' : '未知',
     '宿主含开发机路径: ' + (b.hostHasDevPaths === true ? '是' : b.hostHasDevPaths === false ? '否' : '未知') + '（true = 这份宿主是开发版，未走 strip）',
     b.hostHasDevPaths === true ? 'dshwv-about-bad' : 'dshwv-about-ok')
+  // v825：安装方式决定「升级」按钮能不能用（profile 装的 npm 包才行）
+  var inst = d.install || {}
+  var instText = inst.mode === 'profile' ? ('npm 装进 profile' + (inst.pnpm ? '（pnpm ' + inst.pnpm + '）' : ''))
+    : inst.mode === 'link' ? '软链（link:）' : inst.mode === 'dev' ? '开发目录（含 .git）' : '未知'
+  row('安装方式', instText,
+    '安装方式: ' + instText + (inst.profile ? ('\nprofile: ' + inst.profile) : '') + (inst.declared ? ('\n依赖声明: ' + inst.declared) : '') + (inst.reason ? ('\n' + inst.reason) : ''),
+    inst.managed ? 'dshwv-about-ok' : '')
   secStart('运行环境')
   row('客户端', aboutClientKind(true), '客户端: ' + aboutClientKind() + '（判定来源: ' + ((d.client && d.client.via) || '前端 UA 兜底') + '）' + (r.profile ? ' · profile ' + r.profile : ''))
   row('平台 / Node', (r.platform || '?') + ' ' + (r.arch || '?') + ' · ' + (r.node || '?'), '平台: ' + (r.platform || '?') + ' ' + (r.arch || '?') + ' · Node ' + (r.node || '?'))
@@ -2873,6 +2888,29 @@ function aboutRender() {
   actRow('检查更新', aboutLastUpdate || '检查中…',
     '点击重新检查 npm 上的最新版本（五个源并行：npmmirror / jsdelivr / unpkg / npmjs / npm-cli）',
     '', function () { aboutCheckUpdate() })
+  // v825（用户要求）：有新版本、且这份是 profile 里正经装的 npm 包 ⇒ 给「升级」按钮。
+  //   点一下先弹确认框，确认后才真的从 npm 装；装好需要重启 DSH 才生效（宿主半是启动时加载的）。
+  //   这一行**常驻**（用户反馈"没新版就找不到按钮"）：有新版可升级时是可点的按钮，
+  //   否则用一句话说明"为什么现在不用/不能升级"。
+  var curVer = (aboutData && aboutData.plugin && aboutData.plugin.version) || '?'
+  var modeNote = (aboutInstallMode && aboutInstallMode !== 'profile') ? (' · ' + aboutInstallModeText()) : ''
+  if (aboutUpgradeState) {
+    actRow('升级', aboutUpgradeState, '升级: ' + aboutUpgradeState,
+      /^已升级/.test(aboutUpgradeState) ? 'dshwv-about-ok' : 'dshwv-about-bad', null)
+  } else if (aboutHasUpdate && aboutCanUpgrade) {
+    actRow('升级', '升级到 ' + aboutLatestVersion + '（点击确认）',
+      '从 npm 下载并安装 ' + aboutLatestVersion + '（当前 ' + curVer + '）\n'
+      + '装好后需要**重启 DSH** 才会生效；升级前会自动备份 profile 的 package.json / pnpm-lock.yaml，失败会回滚',
+      'dshwv-about-ok', function () { aboutUpgradeClick() })
+  } else if (aboutHasUpdate) {
+    actRow('升级', '有新版本 ' + aboutLatestVersion + '，但' + aboutInstallModeText(),
+      '升级: 这份插件不是从 npm 装进 profile 的（' + aboutInstallMode + '），不能一键升级 —— ' + aboutInstallModeText(), '', null)
+  } else if (!aboutLastUpdate || aboutLastUpdate === '检查中…') {
+    actRow('升级', '检查中…', '升级: 先检查 npm 上的最新版本', '', null)
+  } else {
+    actRow('升级', '已是最新（' + curVer + '）' + modeNote,
+      '升级: 当前 ' + curVer + ' 已是 npm 上的最新版；有新版时这一行会变成可点的「升级到 x.y.z（点击确认）」' + (modeNote ? ('\n注意：' + aboutInstallModeText()) : ''), '', null)
+  }
   secEnd()
   // 动作区：2 列网格；「复制以上全部信息」放在**最后一行**（用户要求；v814 按要求改名）
   var acts = aboutEl('div', 'dshwv-about-acts')
@@ -2886,7 +2924,7 @@ function aboutRender() {
   btn('上游来源', function () { aboutOpenLink('https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget') })
   btn('复制以上全部信息', function () { aboutCopyText(aboutDiagText(aboutData)) }, true)
   el.appendChild(acts)
-  el.appendChild(aboutEl('div', 'dshwv-about-note', '点任意一行复制该行；每节标题右侧可整节复制。自检只访问本机两条插件路由（不联网、不耗 token）。前端改动需 Ctrl+F5，宿主改动需重启服务。'))
+  el.appendChild(aboutEl('div', 'dshwv-about-note', '点任意一行复制该行；每节标题右侧可整节复制。自检只访问本机两条插件路由（不联网、不耗 token）。前端改动需 Ctrl+F5，宿主改动需重启服务（点「升级」装好新版后同样要重启 DSH 才生效）。'))
   // v805：还原滚动位置（整屏刷新不跳回顶部）
   try { if (keepScroll > 0) el.scrollTop = keepScroll } catch (err) {}
 }
@@ -2943,6 +2981,61 @@ function aboutSelfCheck() {
     if (!aboutUpdateRow('自检', aboutSelfResult, /^通过/.test(aboutSelfResult) ? 'dshwv-about-ok' : 'dshwv-about-bad')) aboutRender()
   })
 }
+// v825（用户要求）：一键升级。用户要的是「一个按钮 → 点击 → 确认 → 升级」：
+//   这里只负责"弹确认 + 打宿主路由"；真正装包由宿主半的 /dsh-whale/update.json 跑 pnpm 完成。
+//   为什么必须重启：宿主半在 DSH 启动时加载，装上新版文件不会热生效（关于面板里也写着这条）。
+function aboutInstallModeText() {
+  var m = String(aboutInstallMode || '')
+  if (m === 'link') return '软链安装，升级请更新本地仓库'
+  if (m === 'dev') return '开发目录，升级请 git pull'
+  if (m === 'unknown') return '没在 profile 依赖里找到它'
+  return '当前安装方式不支持一键升级'
+}
+function aboutUpgradeReason(d) {
+  var code = String((d && d.code) || '')
+  if (code === 'NOT_MANAGED') return '这份插件不是通过 profile 安装的（开发目录 / 软链）'
+  if (code === 'LINK_INSTALL') return '当前是软链安装（link:），请更新本地仓库'
+  if (code === 'BUSY') return '已有一次升级在进行中，稍后再试'
+  if (code === 'PNPM_MISSING') return '找不到可用的 pnpm（应用自带的那个也没找到）'
+  if (code === 'ALREADY_LATEST') return '已经是最新版'
+  if (code === 'TARGET_INVALID') return '目标版本号无效'
+  if (code === 'CONFIRM_REQUIRED') return '缺少确认（需要二次确认）'
+  if (code === 'PNPM_FAILED') return 'pnpm 安装失败：' + String((d && d.detail) || '').slice(0, 140)
+  if (code === 'VERSION_MISMATCH') return '装完后版本校验不一致，已回滚（' + String((d && d.error) || '') + '）'
+  if (code === 'SPAWN_FAILED') return '无法启动 pnpm：' + String((d && d.error) || '')
+  return String((d && d.error) || '未知错误')
+}
+function aboutUpgradeClick() {
+  var target = String(aboutLatestVersion || '')
+  if (!target) return
+  var cur = (aboutData && aboutData.plugin && aboutData.plugin.version) || ''
+  showConfirm('升级到 ' + target + '？\n\n当前 ' + (cur || '?') + ' → ' + target
+    + '\n\n将从 npm 下载并安装（约 5.5 MB），装好后需要重启 DSH 才会生效。\n升级时请不要关闭窗口。',
+    function () { aboutDoUpgrade(target) }, '确认升级')
+}
+function aboutDoUpgrade(target) {
+  aboutUpgradeState = '正在升级…（最多 3 分钟）'
+  aboutRender()
+  var ctl = null
+  var timer = null
+  try { if (typeof AbortController === 'function') ctl = new AbortController() } catch (err) { ctl = null }
+  try { if (ctl) timer = setTimeout(function () { try { ctl.abort() } catch (err) {} }, 200000) } catch (err) {}
+  fetch('/dsh-whale/update.json', {
+    method: 'POST', cache: 'no-store',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ action: 'apply', target: target, confirm: target }),
+    signal: ctl ? ctl.signal : undefined,
+  }).then(function (r) { return r.json() }).then(function (d) {
+    if (timer) { clearTimeout(timer); timer = null }
+    if (d && d.ok) aboutUpgradeState = '已升级到 ' + d.to + ' · 重启 DSH 后生效'
+    else aboutUpgradeState = '升级失败：' + aboutUpgradeReason(d)
+    aboutRender()
+  }).catch(function (err) {
+    if (timer) { clearTimeout(timer); timer = null }
+    aboutUpgradeState = '升级失败：' + String((err && err.message) || err)
+    aboutRender()
+  })
+}
 function aboutCheckUpdate() {
   aboutLastUpdate = '检查中…'
   aboutCheckAt = Date.now()
@@ -2951,14 +3044,24 @@ function aboutCheckUpdate() {
   fetch('/dsh-whale/update-check.json', { cache: 'no-store' }).then(function (r) { return r.json() }).then(function (d) {
     // v805（用户要求）：来源**不显示在行里**，只留在 aboutUpdateSource 里，随「复制诊断信息」一起带出去
     aboutUpdateSource = (d && d.source) ? String(d.source) : ''
-    if (!d || !d.ok) aboutLastUpdate = '检查失败：' + ((d && d.error) || '未知错误')
-    else if (d.channel === 'dev') aboutLastUpdate = '开发版（最新发布 ' + d.latest + '）'
+    aboutLatestVersion = String((d && d.latest) || '')
+    aboutHasUpdate = !!(d && d.ok && d.hasUpdate)
+    aboutCanUpgrade = !!(d && d.ok && d.canSelfUpdate)
+    aboutInstallMode = String((d && d.installMode) || '')
+    if (!d || !d.ok) {
+      aboutLastUpdate = '检查失败：' + ((d && d.error) || '未知错误')
+      aboutHasUpdate = false
+      aboutCanUpgrade = false
+    } else if (d.channel === 'dev') aboutLastUpdate = '开发版（最新发布 ' + d.latest + '）'
     else aboutLastUpdate = d.hasUpdate ? ('有新版本 ' + d.latest + '，当前 ' + d.current) : ('已是最新（' + d.current + '）')
-    if (!aboutUpdateRow('检查更新', aboutLastUpdate)) aboutRender()
+    // v825：检查结果会决定「升级」行出现/消失 ⇒ 这里整屏重画一次（aboutRender 会保留滚动位置）
+    aboutRender()
   }).catch(function (err) {
     aboutUpdateSource = ''
+    aboutHasUpdate = false
+    aboutCanUpgrade = false
     aboutLastUpdate = '检查失败：' + String((err && err.message) || err)
-    if (!aboutUpdateRow('检查更新', aboutLastUpdate)) aboutRender()
+    aboutRender()
   })
 }
 function showAboutSub() {
