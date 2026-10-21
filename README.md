@@ -6,7 +6,7 @@ DSH（DeepSeek Harness）Web 界面右下角的常驻桌宠挂件：鲸鱼气泡
 
 > 🐋 **这是 API3D（api3d.cn）站点专属版**：主气泡余额取自站点账单接口（`billing/subscription` 的 `balance` + 当日 `billing/usage` 的 `total_usage_usd`），站点地址 / 凭据名 / 币种 / 接口与字段**全部内置** —— 装好后只需填一次 API Key。已移除上游的官方 DeepSeek 余额链路、多厂商模板、Codex 本机会话统计与厂商额度接口。
 
-> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.5.7`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.5.7)）
+> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.6.0`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.6.0)）
 
 ## 安装（DSH Web）
 
@@ -36,7 +36,10 @@ dsh plugin --profile web add link:<本目录绝对路径>
 - 💬 **每轮对话消耗**：监听 DSH 本机会话事件，按模型**真实 usage**（input / cache / output / reasoning tokens）换算金额，每轮结束弹出消耗泡泡；可开关、自动关闭秒数可设（0 = 不自动关闭），**泡泡内容可自定义**（模块化，金额用 `{cost}` 引用），入口：菜单 → 「音效与提示」→ 「全局设置」→ 展开「每轮消耗提示」→「编辑提示内容」
 - ⛰️ **峰谷定价**：工作日高峰 9:00–12:00、14:00–18:00（北京时间），其余空闲；2026-08-23 起**周末全天谷价**。峰谷模块支持状态文字、倒计时、"梁文峰谷 / !?强强?! / 简洁"等多种样式
 - 📒 **用量记录窗口**：今日模型消费、近 7 天、全部记录；模型占比条；按日期展开逐条明细（含时间与金额）；支持按日期或**模型名搜索**；模型名带友好标注（`deepseek-flash` → `DeepSeek-V4.1-Flash`，旧名标注"同 V4.1 Flash"）
-- ⬆️ **一键升级**（本副本新增）：DSH 插件管理器**没有更新功能**，所以插件自带一条升级路径 ——「关于 / 自检」顶部检查更新，有新版且这份是 **npm 装进 profile 的**时出现一行 **升级**：点它 → 弹确认框（当前 → 目标、约 5.5 MB、装好需重启 DSH）→ 点「确认升级」才真的开始；宿主在 profile 目录里跑 `pnpm add dsh-api3d-pet@<新版>`（优先用应用自带的 pnpm v11，避免 `ERR_PNPM_UNEXPECTED_STORE`），装完校验版本号，**升级前备份 `package.json` / `pnpm-lock.yaml`，失败或版本不符自动回滚**。开发目录（含 `.git`）与软链（`link:`）安装**不出按钮**（显示一行说明），升级记录写在 `$DSH_HOME/.dshw-update.log`。详见下面「一键升级」一节
+- ⬆️ **一键升级（两个入口，同一套逻辑）**：DSH 插件管理器**没有更新功能**，所以插件自带升级路径 ——
+  ① **插件页里就有按钮**（本副本 0.6.0 起）：左侧栏「**插件**」→「已安装」→ 点 `dsh-api3d-pet` 进组合包详情页 → 页头操作区（**就在「卸载」左边**）出现 **升级到 x.y.z** → 点它变「确认升级到 x.y.z / 取消」→ 点确认才真的开始；这走的是官方 `plugins.detail.actions` 槽位（插件自己的客户端半区 `lib/client.js` 注册），不是改别人的 DOM；
+  ② 「关于 / 自检」面板里也有同一行 **升级**，行为完全一致。
+  两者都：只在**有新版**时出现（没新版就什么都不显示）、只在**这份是 npm 装进 profile** 时可用（开发目录 / `link:` 安装显示说明不出按钮）；宿主在 profile 目录里跑 `pnpm add dsh-api3d-pet@<新版>`（候选顺序：应用自带 pnpm → PATH 里的 pnpm，避免 `ERR_PNPM_UNEXPECTED_STORE`），装完校验版本号，**升级前备份 `package.json` / `pnpm-lock.yaml`，失败或版本不符自动回滚**；升级记录写在 `$DSH_HOME/.dshw-update.log`。详见下面「一键升级」一节
 
 ### 交互
 
@@ -139,14 +142,19 @@ dsh plugin --profile web add link:<本目录绝对路径>
 
 **验证**：不连真站点也能跑通 —— 仓库外有一份假站点 + 假宿主的端到端用例（`E:\DSH\DSH-Test\test\relay-balance.mjs`，覆盖取数、当日已用（账号 / 本 key 两种口径）、分组、分本、站点单条、来源报错、401、缺 key、零配置保存等路径，共 72 条断言）。
 
-### 一键升级（关于面板里的「升级」按钮，本副本新增）
+### 一键升级（插件页 + 关于面板，两个入口同一套逻辑）
 
-DSH 的插件管理器**没有更新功能**（它的文案就是「插件安装后暂不支持自动更新。若需升级，请先卸载再安装新版」），所以本插件自带一条升级路径：
+DSH 的插件管理器**没有更新功能**（它的文案就是「插件安装后暂不支持自动更新。若需升级，请先卸载再安装新版」），所以本插件自带一条升级路径，并且**把按钮放进了插件页本身**：
 
-1. 打开「关于 / 自检」→ 顶部 **检查更新** 会去 npm 的五个源并行查最新版；
-2. 有新版、**并且这份是按 npm 装进 profile 的**时，下面会出现一行 **升级**（文案 `升级到 x.y.z（点击确认）`）；
-3. 点它 → 弹确认框（当前 → 目标、约 5.5 MB、**装好后需要重启 DSH**）→ 点「确认升级」才真的开始；
-4. 宿主半在 profile 目录里跑 `pnpm add dsh-api3d-pet@<新版>`，装完**校验 `node_modules` 里的版本号**；重启 DSH 后生效。
+**入口 ①（0.6.0 起，推荐）**：左侧栏「**插件**」→「已安装」→ 点 `dsh-api3d-pet` 进**组合包详情页** → 页头操作区（**紧挨着「卸载」左边**）就是 **升级到 x.y.z** → 点它变「确认升级到 x.y.z / 取消」→ 确认后才开始。这走的是官方 `plugins.detail.actions` 槽位：插件自己的客户端半区 `lib/client.js` 用 `window.__ModuleLoader__.load({ id: 'dsh-api3d-pet', factory })` 注册一个条目，只对 `subject.kind === 'bundle' && subject.pkg.name === 'dsh-api3d-pet'` 渲染控件（其它组合包/行/官方插件页一律 `null`），**不碰任何别人的 DOM**。
+
+**入口 ②**：「关于 / 自检」→ 顶部 **检查更新** 之后同一行 **升级**。
+
+两个入口的行为完全一致：
+
+1. 有新版时按钮才出现（没新版：关于面板显示「已是最新（x.y.z）」，插件页则什么都不显示，保持页面干净）；
+2. 点它 → 变「确认升级到 x.y.z / 取消」（关于面板里是弹确认框，当前 → 目标、约 5.5 MB、**装好后需要重启 DSH**）→ 点确认才真的开始；
+3. 宿主半在 profile 目录里跑 `pnpm add dsh-api3d-pet@<新版>`，装完**校验 `node_modules` 里的版本号**；重启 DSH 后生效。
 
 几条边界（写进了实现，不是"约定"）：
 
@@ -157,7 +165,7 @@ DSH 的插件管理器**没有更新功能**（它的文案就是「插件安装
 - **写栅栏**：这条路由与其它写接口一样只接受**本机来源**（回环 Host / `DSHW_TRUSTED_HOSTS`），非本机请求被拒；
 - 每次尝试都会往 `$DSH_HOME/.dshw-update.log` 追加记录，`/dsh-whale/update-log.json` 返回最近 40 行（排障用）。
 
-**验证**：`node E:\DSH\DSH-Test\test\update-route.mjs` —— 假 profile + 假 pnpm 跑完整升级路径（安装方式判定、成功升级、pnpm 失败回滚、版本不符回滚、**store 不匹配时自动退到下一个 pnpm 候选**、五条护栏、写栅栏、软链拒绝），共 39 条断言。
+**验证**：`node E:\DSH\DSH-Test\test\update-route.mjs` —— 假 profile + 假 pnpm 跑完整升级路径（安装方式判定、成功升级、pnpm 失败回滚、版本不符回滚、**store 不匹配时自动退到下一个 pnpm 候选**、五条护栏、写栅栏、软链拒绝），共 46 条断言。
 
 ## 目录结构
 
@@ -169,6 +177,7 @@ dsh-api3d-pet/
 ├── cordis.patch.yml          # 插件挂载声明
 ├── lib/
 │   ├── index.js              # 宿主侧插件本体（路由 + 记账 + 音效/图片/角色服务）
+│   ├── client.js             # 客户端半区（浏览器 bundle）：把「升级到 x.y.z」按钮注册进插件页的组合包详情页（官方 plugins.detail.actions 槽位）
 │   └── accounting.mjs        # 记账内核（定点金额运算 + 余额观测/校正账本）
 ├── assets/
 │   ├── whale-widget.js       # 前端挂件本体（由宿主按 mtime 热读取）
