@@ -2885,6 +2885,16 @@ function aboutRender() {
     row('站点分组', gTitle ? (gTitle.length > 22 ? gTitle.slice(0, 22) + '…' : gTitle) : '未知',
       '站点分组: ' + (gTitle || '未知') + (srcM.planNote ? ('（' + srcM.planNote + '）') : ''))
   } else row('站点分组', '未配置余额来源', '站点分组: 未配置余额来源（在模型面板勾「主气泡余额来源」）')
+  // fork（API3D 专属 · 实测倍率）：核对「配置倍率」与「实际扣费」是否一致 —— 倍率调成 1 之后，
+  //   这里应该显示 1.00×；区间内没用量或站点版本旧 ⇒ 显示 `—`（不要把"没数据"读成"没打折"）。
+  if (srcM) {
+    var rRate = (srcM.todayUsageRate !== null && srcM.todayUsageRate !== undefined && isFinite(Number(srcM.todayUsageRate)))
+      ? Number(srcM.todayUsageRate) : null
+    row('计费倍率', rRate === null ? '—（站点未回传）' : (rRate.toFixed(2) + '×（实测）'),
+      '计费倍率: ' + (rRate === null
+        ? '站点没回传实测倍率（旧版站点，或统计区间内没有用量）；配置倍率可查 /v1/sub2api/billing'
+        : ('实测 = 实扣 ÷ 标准价 = ' + rRate.toFixed(4) + '（统计区间与「今日已用」相同）；配置倍率见 /v1/sub2api/billing')))
+  }
   // v798 起：打开面板时自动跑一次；v802（用户要求）：这两行**不复制**，点击 = 重新执行。
   actRow('自检', aboutSelfResult || '检查中…',
     '点击重新自检：只从浏览器访问本机两条插件路由（不联网、不耗 token）' + (aboutSelfDetail ? ('\n上次：' + aboutSelfDetail) : ''),
@@ -5040,6 +5050,8 @@ function openApiModelPanel(modelId, opts) {
       grpHint.className = 'dshwv-bubhint'
       grpHint.style.margin = '0 0 8px'
       grpHint.textContent = '站点分组：' + m.planTitle + (m.planNote ? '（' + m.planNote + '）' : '')
+        + ((m.todayUsageRate !== null && m.todayUsageRate !== undefined && isFinite(Number(m.todayUsageRate)))
+          ? (' · 倍率 ' + Number(m.todayUsageRate).toFixed(2) + '×（实测）') : '')
       card.appendChild(grpHint)
     }
     // fork（API3D 专属）：站点地址 / 接口 / 字段全部内置 —— 用户只需要填一行 API Key
@@ -13942,6 +13954,8 @@ var state = {
   todayUsage: null,
   todayUsageCurrency: 'CNY',
   usageLabel: '本地估算',
+  // 站点回传的实测倍率（实扣 ÷ 标准价）；null = 站点没给（老站点 / 区间内没用量）
+  usageRate: null,
   // 'api' = 站点接口口径（本 key 当日扣费，主气泡独占）；'ledger' = 本地账本/余额观测口径
   usageSource: 'ledger',
   isPeak: false,
@@ -17347,8 +17361,16 @@ function bubbleAmountText() {
   if (v === null) return '…'
   return fmt(v, state.currency)
 }
+// fork（API3D 专属 · 实测倍率）：站点在 billing/usage 里回传 effective_rate_multiplier 时，
+//   跟在「今日已用」后面显示成 ` · ×1.00` —— 把倍率调成 1 之后一眼就能看出计费没打折。
+//   站点没给（老站点 / 区间内没用量）时返回空串，界面保持原样。
+function usageRateSuffix() {
+  var r = state.usageRate
+  if (r === null || r === undefined || !isFinite(Number(r))) return ''
+  return ' · ×' + Number(r).toFixed(2)
+}
 function bubbleTodayText() {
-  return (state.usageLabel || '今日已用') + ' ' + (state.todayUsage !== null && state.todayUsage !== undefined ? fmt(state.todayUsage, state.todayUsageCurrency || state.currency) : '--')
+  return (state.usageLabel || '今日已用') + ' ' + (state.todayUsage !== null && state.todayUsage !== undefined ? fmt(state.todayUsage, state.todayUsageCurrency || state.currency) : '--') + usageRateSuffix()
 }
 // v782：赠金 / 充值余额两个数值模块的取数（与「总余额(充值金额+赠金)」同源：宿主余额返回体）。
 //   ⚠️ 两个数字**可能拿不到**（厂商没有该字段、或未登录账号）⇒ 显示 `—`，**不显示 0**
@@ -18928,7 +18950,7 @@ function render() {
     hint = '加载中…'
   } else {
     amount = shown !== null ? fmt(shown, state.currency) : fmt(state.balance, state.currency)
-    hint = (state.usageLabel || '今日已用') + ' ' + (state.todayUsage !== null && state.todayUsage !== undefined ? fmt(state.todayUsage, state.todayUsageCurrency || state.currency) : '--')
+    hint = (state.usageLabel || '今日已用') + ' ' + (state.todayUsage !== null && state.todayUsage !== undefined ? fmt(state.todayUsage, state.todayUsageCurrency || state.currency) : '--') + usageRateSuffix()
   }
   amountEl.textContent = amount
   if (bubbleRandomActive && bubbleRandomLines) {
@@ -19118,6 +19140,13 @@ function refresh(manual) {
         state.usageLabel = data.usageLabel || '本地估算'
         if (data.todayUsageUnavailable) state.usageLabel += ' · 取数失败'
         if (data.stale) state.usageLabel += ' · 余额未刷新'
+        // fork（实测倍率）：站点给了就更新；站点没给且本次「今日已用」取数正常 ⇒ 清空（老站点不该留旧数）；
+        //   取数失败时保留上一次的值，免得 ×1.00 因为一次网络抖动就消失。
+        if (data.usageRate !== null && data.usageRate !== undefined && isFinite(Number(data.usageRate))) {
+          state.usageRate = Number(data.usageRate)
+        } else if (!data.todayUsageUnavailable) {
+          state.usageRate = null
+        }
         state.isPeak = !!data.isPeak
         // fork（站点专属）：没有官方回退 —— balanceSourceFallback 只会跟 ok:false 一起来（见下面的失败分支）。
   // v790（用户要求）：菜单底部那行版本小字（宿主下发 versionLabel；老宿主没有就退回 version）
