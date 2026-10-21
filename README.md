@@ -6,7 +6,7 @@ DSH（DeepSeek Harness）Web 界面右下角的常驻桌宠挂件：鲸鱼气泡
 
 > 🐋 **这是 API3D（api3d.cn）站点专属版**：主气泡余额取自站点账单接口（`billing/subscription` 的 `balance` + 当日 `billing/usage` 的 `total_usage_usd`），站点地址 / 凭据名 / 币种 / 接口与字段**全部内置** —— 装好后只需填一次 API Key。已移除上游的官方 DeepSeek 余额链路、多厂商模板、Codex 本机会话统计与厂商额度接口。
 
-> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.5.4`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.5.4)）
+> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.5.5`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.5.5)）
 
 ## 安装（DSH Web）
 
