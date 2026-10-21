@@ -645,11 +645,14 @@ var css = [
   '.dshwv-text .dshwv-mimg{flex:0 0 auto}',
   // label/amount/hint 三行也作为整体在 flex 容器内居中
   '.dshwv-text .dshwv-label,.dshwv-text .dshwv-amount,.dshwv-text .dshwv-hint{flex:0 0 auto;margin-left:auto;margin-right:auto}',
-  '.dshwv-label{font-size:calc(var(--dshw-u) * 66);font-weight:600;letter-spacing:.06em}',
-  '.dshwv-amount{font-size:calc(var(--dshw-u) * 128);font-weight:800;line-height:1.05}',
-  '.dshwv-period{font-size:calc(var(--dshw-u) * 104);font-weight:800;line-height:1.05}',
+  // fork（API3D 专属）：气泡字号整体收小 —— 站点金额带「¥ 0.000075」这种长串，
+  //   原来的 66/128/104/56 在大号挂件上会顶出泡泡边界。这里统一压到 52/104/88/44，
+  //   再加上 fitBubbleText()（见 textBox 定义处）对超宽行做等比缩小兜底。
+  '.dshwv-label{font-size:calc(var(--dshw-u) * 52);font-weight:600;letter-spacing:.06em}',
+  '.dshwv-amount{font-size:calc(var(--dshw-u) * 104);font-weight:800;line-height:1.05}',
+  '.dshwv-period{font-size:calc(var(--dshw-u) * 88);font-weight:800;line-height:1.05}',
   '.dshwv-wrap{white-space:normal;max-width:calc(var(--dshw-u) * 560);line-height:1.2}',
-  '.dshwv-hint{font-size:calc(var(--dshw-u) * 56);color:#9fb0d9;letter-spacing:.02em;margin-top:calc(var(--dshw-u) * 9);min-height:calc(var(--dshw-u) * 64);line-height:1.15}',
+  '.dshwv-hint{font-size:calc(var(--dshw-u) * 44);color:#9fb0d9;letter-spacing:.02em;margin-top:calc(var(--dshw-u) * 9);min-height:calc(var(--dshw-u) * 54);line-height:1.15}',
   '.dshwv-menu-btn{position:absolute;top:calc(40.55% + 4px);right:4px;width:26px;height:26px;border:none;border-radius:6px;background:rgba(32,49,112,.85);cursor:pointer;pointer-events:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0;z-index:2;opacity:0;transition:opacity .15s ease}',
   '.dshwv-menu-btn.dshwv-menu-btn-visible{opacity:1}',
   '.dshwv-menu-btn span{display:block;width:14px;height:2px;background:#fff;border-radius:1px}',
@@ -13573,6 +13576,30 @@ audioCropDual.addEventListener('pointermove', onAudioCropDualMove)
 audioCropDual.addEventListener('pointerup', onAudioCropDualUp)
 audioCropDual.addEventListener('pointercancel', onAudioCropDualUp)
 
+// fork（API3D 专属）：气泡文字自适配 —— 站点金额位数不可控（`¥ 0.000075`、`¥ 12345.67`…），
+//   固定字号总有顶出泡泡边界的一天。这里按文字层宽度对**超宽的行**做等比缩小（只缩不放，最少 55%）。
+//   幂等：每次先把上一轮的内联 font-size 清掉再量，所以换文案 / 切换模板块 / 改挂件大小后都能重算。
+function fitBubbleText(box) {
+  try {
+    if (!box || !box.children) return
+    // 文字层是泡泡框的 66% 宽；形状（云朵/自定义框）内侧还会再收一点 ⇒ 留 10% 余量当"可用宽度"
+    var avail = box.clientWidth * 0.9
+    if (!avail) return
+    for (var i = 0; i < box.children.length; i++) {
+      var el = box.children[i]
+      if (!el || el.nodeType !== 1) continue
+      el.style.fontSize = ''
+      var w = el.getBoundingClientRect().width
+      if (!w || w <= avail) continue
+      var base = parseFloat(window.getComputedStyle(el).fontSize)
+      if (!isFinite(base) || base <= 0) continue
+      var next = base * (avail / w) * 0.97
+      var floor = base * 0.55
+      if (next < floor) next = floor
+      el.style.fontSize = next.toFixed(2) + 'px'
+    }
+  } catch (err) {}
+}
 var textBox = document.createElement('div')
 textBox.className = 'dshwv-text'
 var labelEl = document.createElement('div')
@@ -13611,6 +13638,16 @@ bubbleBox.appendChild(gifEl)
 var gifFailed = false
 gifEl.onerror = function () { gifFailed = true }
 bubbleBox.appendChild(textBox)
+// fork（API3D 专属）：挂件被拖大/缩小、或窗口尺寸变化后，按新的文字层宽度重算字号
+//   （fitBubbleText 幂等：先清内联字号再量，所以重复调用安全；ResizeObserver 观察 pop 本身，
+//    字号变化不会反过来改变 pop 尺寸，因此不会形成回调死循环）
+try {
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(function () { fitBubbleText(textBox) }).observe(bubbleBox)
+  } else {
+    window.addEventListener('resize', function () { fitBubbleText(textBox) })
+  }
+} catch (err) {}
 bubbleBox.addEventListener('click', function (e) {
   e.stopPropagation()
   if (!bubbleShown) return
@@ -13938,6 +13975,7 @@ function applyBubbleLines(lines) {
       el.style.color = ''
     }
   }
+  fitBubbleText(textBox)
 }
 var bubbleSwapTimer = null
 var hintFadeTimer = null
@@ -13952,6 +13990,7 @@ function setHint(text) {
   lastHintText = text
   if (first || !bubbleShown) {
     hintEl.textContent = text
+    fitBubbleText(textBox)
     return
   }
   hintEl.style.transition = 'opacity .18s ease'
@@ -13959,6 +13998,7 @@ function setHint(text) {
   hintFadeTimer = setTimeout(function () {
     hintFadeTimer = null
     hintEl.textContent = text
+    fitBubbleText(textBox)
     hintEl.style.opacity = '1'
     setTimeout(function () {
       hintEl.style.transition = ''
@@ -17027,6 +17067,8 @@ function sceneOpen(kind, renderFn, ttlMs) {
   function finish() {
     try { renderFn() } catch (err) {}
     try { bubbleBox.classList.add('dshwv-pop-open') } catch (err) {}
+    // fork（API3D 专属）：泡泡每次成形后再量一次，保证文字永远落在框内（内容/大小都可能刚变过）
+    fitBubbleText(textBox)
     // 内容替换(泡泡已开着)时淡入新文字;首次打开不加内联透明度,
     // 文字显隐交给 CSS(.dshwv-pop-open 才显示,带 .36s 延时跟随泡泡成形)
     if (wasOpen) {
@@ -18707,6 +18749,7 @@ function animateAmount(from, to, currency, duration) {
   if (from === to) {
     shown = to
     amountEl.textContent = fmt(to, currency)
+    fitBubbleText(textBox)
     return
   }
   var startTime = null
@@ -18727,6 +18770,7 @@ function animateAmount(from, to, currency, duration) {
       animId = null
       shown = to
       amountEl.textContent = fmt(to, currency)
+      fitBubbleText(textBox)
     }
   }
   animId = requestAnimationFrame(step)
@@ -18751,6 +18795,7 @@ function render() {
   } else {
     setHint(hint)
   }
+  fitBubbleText(textBox)
   // 注意:不在泡泡显示期间整泡重绘(内容在用户观看时保持稳定);
   // 数值/峰谷等更新由“泡泡消失→下一次显示”时的渲染自然采用最新 state
 }
