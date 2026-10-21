@@ -1036,6 +1036,8 @@ var css = [
   '.dshwv-marq{overflow:hidden;min-width:0;white-space:nowrap}',
   '.dshwv-marq>span{display:inline-block;white-space:nowrap;will-change:transform}',
   '.dshwv-usage-hint{color:#9fb0d9;font-size:11px;padding:2px 0;line-height:1.4}',
+  // fork（站点专属）：记账面板顶部的「计费倍率 ×0.45（实测）」一行
+  '.dshwv-usage-rate{text-align:center;font-size:11px;color:#5b6b96;line-height:1.35;margin:0 0 6px;cursor:help}',
   '.dshwv-usage-subtitle{text-align:center;font-size:13px;font-weight:700;color:#203170;margin:0 0 6px}',
   // 预警与预算设置区
   '.dshwv-usageset{border:1px dashed rgba(32,49,112,.28);border-radius:8px;padding:0 6px 6px;margin:0 0 6px}',
@@ -6028,6 +6030,19 @@ function fillUsagePanel(d) {
     hostEl.appendChild(wrap)
     return
   }
+  // fork（站点专属）：把站点的**实测计费倍率**也放到记账面板里（主气泡只有一行小字 ×0.45，这里写全）
+  var rateLine = document.createElement('div')
+  rateLine.className = 'dshwv-usage-rate'
+  var rateV = state.usageRate
+  if (rateV !== null && rateV !== undefined && isFinite(Number(rateV))) {
+    rateLine.textContent = '计费倍率 ×' + Number(rateV).toFixed(2) + '（实测）'
+    rateLine.title = '站点按「实际扣费 ÷ 标准价」实测的倍率（/v1/dashboard/billing/usage 回传的 effective_rate_multiplier）。' +
+      '主气泡「今日已用」后面那截 · ×' + Number(rateV).toFixed(2) + ' 就是它。'
+  } else {
+    rateLine.textContent = '计费倍率 —（站点未回传）'
+    rateLine.title = '站点还没回传实测倍率：需要站点侧支持 effective_rate_multiplier；本行会在站点支持后自动出数。'
+  }
+  wrap.appendChild(rateLine)
   var today = d.today || {}
   var todayModels = today.models || []
   var hasEvToday = todayModels.length > 0
