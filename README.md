@@ -6,7 +6,7 @@ DSH（DeepSeek Harness）Web 界面右下角的常驻桌宠挂件：鲸鱼气泡
 
 > 🐋 **这是 API3D（api3d.cn）站点专属版**：主气泡余额取自站点账单接口（`billing/subscription` 的 `balance` + 当日 `billing/usage` 的 `total_usage_usd`），站点地址 / 凭据名 / 币种 / 接口与字段**全部内置** —— 装好后只需填一次 API Key。已移除上游的官方 DeepSeek 余额链路、多厂商模板、Codex 本机会话统计与厂商额度接口。
 
-> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.6.4`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.6.4)）
+> 📦 开源仓库：<https://github.com/ptb-xiaou/dsh-api3d-pet> ｜ npm：<https://www.npmjs.com/package/dsh-api3d-pet> ｜ 版本 `0.6.5`（[Release](https://github.com/ptb-xiaou/dsh-api3d-pet/releases/tag/v0.6.4)）
 
 ## 安装（DSH Web）
 
@@ -158,14 +158,14 @@ DSH 的插件管理器**没有更新功能**（它的文案就是「插件安装
 
 几条边界（写进了实现，不是"约定"）：
 
-- **只对 profile 安装生效**：开发目录（含 `.git`）与软链（`link:`）安装**不出按钮**（显示一行说明，提示 `git pull` / 更新本地仓库）—— 一键升级绝不会把源码 checkout 换成 npm 包；
+- **只对 profile 安装生效**：开发目录（含 `.git`）与软链（`link:`）安装**不出按钮**（显示一行说明，提示 `git pull` / 更新本地仓库）—— 一键升级绝不会把源码 checkout 换成 npm 包。这个判定是**纯文件系统判断、在响应路径上同步完成的**（0.6.5 起）：**首次打开插件页/关于面板就已经是正确状态**，不会先给你一个点下去必然失败的按钮（0.6.4 及更早在冷启动时会「乐观放行」，点了才拿到 `LINK_INSTALL` / `NOT_MANAGED`；「用哪个 pnpm」这类需要 spawn 的信息仍走后台预热，不影响按钮状态）；
 - **pnpm 按候选列表依次尝试**：先用**应用自带的**那个（`<应用目录>/resources/app/node_modules/pnpm`，实测 v11），失败就退到 **PATH 上的 pnpm** —— 实测 dev-home 的 profile 是 pnpm v10 从 `.pnpm-store\v10` 链的，应用自带 v11 直接跑会 `ERR_PNPM_UNEXPECTED_STORE`，退回 v10 才能装上；可用 `DSHW_PNPM_BIN` 覆盖（自建环境 / 测试用，多个路径用 `;` 分隔，会按顺序尝试）；
 - **升级前备份** profile 的 `package.json` 与 `pnpm-lock.yaml`：`pnpm` 非零退出、或**装完版本对不上**，都会自动回滚并在结果里回 `rolledBack:true`；
 - **必须二次确认**：`POST /dsh-whale/update.json` 要求 `confirm` 等于目标版本，缺了直接拒（`CONFIRM_REQUIRED`）；目标不比当前新也会被拒（`ALREADY_LATEST`）；
 - **写栅栏**：这条路由与其它写接口一样只接受**本机来源**（回环 Host / `DSHW_TRUSTED_HOSTS`），非本机请求被拒；
 - 每次尝试都会往 `$DSH_HOME/.dshw-update.log` 追加记录，`/dsh-whale/update-log.json` 返回最近 40 行（排障用）。
 
-**验证**：`node E:\DSH\DSH-Test\test\update-route.mjs` —— 假 profile + 假 pnpm 跑完整升级路径（安装方式判定、成功升级、pnpm 失败回滚、版本不符回滚、**store 不匹配时自动退到下一个 pnpm 候选**、五条护栏、写栅栏、软链拒绝），共 46 条断言。
+**验证**：`node E:\DSH\DSH-Test\test\update-route.mjs` —— 假 profile + 假 pnpm 跑完整升级路径（安装方式判定、成功升级、pnpm 失败回滚、版本不符回滚、**store 不匹配时自动退到下一个 pnpm 候选**、五条护栏、写栅栏、软链拒绝），共 50 条断言。
 
 ## 目录结构
 
