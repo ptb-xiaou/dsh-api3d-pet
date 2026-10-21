@@ -5631,7 +5631,10 @@ function refreshUsageMain() {
       try { requestAnimationFrame(function () { usageScrollRestore(snap) }) } catch (err) {}
       // 用量面板刷新只更新泡泡状态数据;不在泡泡正显示时整泡重绘,
       // 数值由“泡泡消失→下一次显示”的渲染自然采用最新 state
-      if (d && d.ok && d.today && isFinite(Number(d.today.total))) {
+      // fork（站点专属 · 修「今日已用来回跳」）：主气泡的「今日已用」由**站点接口口径**独占
+      //   （usageSource === 'api'）；这一段是本地账本（余额观测）口径，只在还没有站点口径时才允许
+      //   写进主气泡 —— 否则两个含义不同的数字（本 key 当日扣费 vs 余额净减少）会互相覆盖、来回跳。
+      if (d && d.ok && d.today && isFinite(Number(d.today.total)) && state.usageSource !== 'api') {
         var recTotal = Number(d.today.total)
         state.todayUsage = recTotal
         state.todayUsageCurrency = d.today.currency || 'CNY'
@@ -13812,6 +13815,8 @@ var state = {
   todayUsage: null,
   todayUsageCurrency: 'CNY',
   usageLabel: '本地估算',
+  // 'api' = 站点接口口径（本 key 当日扣费，主气泡独占）；'ledger' = 本地账本/余额观测口径
+  usageSource: 'ledger',
   isPeak: false,
   peakNextChangeAt: null,
   peakHolidays: null,
@@ -18971,12 +18976,20 @@ function refresh(manual) {
         state.currency = nc
         state.message = ''
         balanceRetryLeft = 2
-        state.todayUsage = data.todayUsage !== undefined ? data.todayUsage : null
+        // fork（站点专属 · 修「今日已用来回跳」）：站点口径优先且唯一 ——
+        //   usage 这次没取到时（todayUsageUnavailable）沿用上一次显示的数字，绝不用别的口径顶上。
+        state.usageSource = data.usageSource || 'ledger'
+        if (data.todayUsage === null || data.todayUsage === undefined) {
+          if (!data.todayUsageUnavailable) state.todayUsage = null
+        } else {
+          state.todayUsage = data.todayUsage
+        }
         state.todayUsageCurrency = data.todayUsageCurrency || data.currency || 'CNY'
         // v781：赠金 / 充值余额（宿主两条路都下发；缺失给 null ⇒ 模块显示 —）
         state.bonusBalance = isFinite(Number(data.bonusBalance)) ? Number(data.bonusBalance) : null
         state.rechargeBalance = isFinite(Number(data.rechargeBalance)) ? Number(data.rechargeBalance) : null
         state.usageLabel = data.usageLabel || '本地估算'
+        if (data.todayUsageUnavailable) state.usageLabel += ' · 取数失败'
         if (data.stale) state.usageLabel += ' · 余额未刷新'
         state.isPeak = !!data.isPeak
         // fork（站点专属）：没有官方回退 —— balanceSourceFallback 只会跟 ok:false 一起来（见下面的失败分支）。
