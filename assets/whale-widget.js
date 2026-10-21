@@ -1356,7 +1356,7 @@ menuBtn.type = 'button'
 menuBtn.className = 'dshwv-menu-btn'
 menuBtn.title = '菜单'
 menuBtn.innerHTML = '<span></span><span></span><span></span>'
-menuBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu() })
+menuBtn.addEventListener('click', function (e) { e.stopPropagation(); apiOpenMenuOrKeyDialog() })
 
 var menuBox = document.createElement('div')
 menuBox.className = 'dshwv-menu'
@@ -5048,6 +5048,10 @@ function openApiModelPanel(modelId, opts) {
             // fork（API3D 专属）：引导配置完 key 就立刻重取一次余额，
             // 否则要等下一次 60s 轮询 —— 引导卡写着"保存后立刻出数"，这里让它成真。
             try { refresh(true) } catch (err) {}
+            // 用户点菜单本来就是要用菜单：key 存好、模型列表刷新完，直接把菜单打开
+            if (needKey) {
+              loadApiModels(function () { try { if (!menuOpen && !apiFirstRunOpen) toggleMenu() } catch (err) {} }, true)
+            }
           }, '确认')
           return
         }
@@ -5892,10 +5896,12 @@ function fillUsagePanel(d) {
   // ① 本机模型费用（所有模型的本地会话估算）
   // 「已观测消费」是 DeepSeek 账户口径（余额观测），已移到 API3D 记账 → DeepSeek（内置）→ 设置 里，
   // 与「余额校正」放在一起，避免在这里被误读成"全模型合计"。
-  var modelTitle = uSectionTitle('本机模型费用', usageMoney(today.modelTotal, 'CNY'))
+  // fork（API3D 专属）：这行是**本机口径**的估算（本机 DSH 会话 token × 内置价目表），
+  // 站点接口不提供按模型明细 ⇒ 与主气泡「今日已用」（站点 billing/usage）不同源，标题里点明。
+  var modelTitle = uSectionTitle('本机模型费用（本地估算）', usageMoney(today.modelTotal, 'CNY'))
   // 标题与下方模型列表之间不再画分隔线（列表本身有边框，够了）
   modelTitle.style.borderBottom = 'none'
-  modelTitle.title = '按本机 DSH 会话计算，不按账户余额比例缩放；两者覆盖范围不同。'
+  modelTitle.title = '本机口径：按本机 DSH 会话的 token × 内置价目表估算（站点接口不给按模型明细）；主气泡的「今日已用」是站点接口的当日扣费，两者不同源。'
   wrap.appendChild(modelTitle)
   var todayBox = document.createElement('div')
   todayBox.className = 'dshwv-usage-scroll dshwv-usage-today'
@@ -5914,23 +5920,26 @@ function fillUsagePanel(d) {
   } else if ((today.total || 0) > 0) {
     var noM = document.createElement('div')
     noM.className = 'dshwv-usage-hint'
-    noM.textContent = '暂无本机会话费用明细；账户余额观测仍独立记账。'
+    noM.textContent = '本机还没有逐轮费用明细（余额观测仍在独立记账）。'
     todayBox.appendChild(noM)
   } else {
     var empty = document.createElement('div')
     empty.className = 'dshwv-usage-hint'
-    empty.textContent = '今日暂无消费记录'
+    empty.textContent = '本机今天还没有用量：本机模型费用只在本机 DSH 会话跑过对话后才有数；站点口径的「今日已用」看主气泡。'
     todayBox.appendChild(empty)
   }
   // 列表高度不限制（随内容增长），下方「更多消费记录…」位置随内容移动
   wrap.appendChild(todayBox)
-  // ② 近 7 天（列表不限制高度）；标题上方加分隔线、自身不带下分隔线
+  // ② 近 N 天（天数不预设）：从插件开始记账那天起算，只显示有意义的那些天；标题上方加分隔线、自身不带下分隔线
+  var dayCount = (d.days7 || []).length
+  var t7Label = dayCount <= 1 ? '今日使用记录' : (dayCount >= 7 ? '近7天使用记录' : ('近' + dayCount + '天使用记录'))
   var sep7 = document.createElement('div')
   sep7.style.borderTop = '1px solid rgba(32,49,112,.15)'
   sep7.style.margin = '6px 0'
   wrap.appendChild(sep7)
-  var t7 = uSectionTitle('近7天使用记录', usageMoney(d.total7, d.total7Currency))
+  var t7 = uSectionTitle(t7Label, usageMoney(d.total7, d.total7Currency))
   t7.style.borderBottom = 'none'
+  t7.title = d.installedDay ? ('从本插件开始记账那天（' + d.installedDay + '）起算；安装/启用之前的日期不显示。') : '从本插件开始记账那天起算。'
   wrap.appendChild(t7)
   var daysBox = document.createElement('div')
   daysBox.className = 'dshwv-usage-scroll'
@@ -19568,17 +19577,25 @@ function pressUp() {
 }
 var menuOpen = false
 var menuClosedAt = 0 // 最近一次关闭菜单的时刻(用于避免"关掉后同一次手势又把它长按打开")
-// fork（API3D 专属）：打开菜单时先确认站点 key —— 没配置就直接盖一层引导遮罩（阻止继续操作）。
-// 数据还没到时先拉一次 api-models.json，回来再判定（避免误弹；拉取失败则不挡）。
-function apiFirstRunGuard() {
+// fork（API3D 专属）：菜单按钮的**唯一入口** —— 打开之前先确认站点 key。
+//   没配 key ⇒ 只弹 key 引导卡、菜单不打开（「菜单面板」与「key 弹窗」永远只出现一个，用户 m03317）；
+//   数据还没到 ⇒ 先拉一次 api-models.json，回来再判定（拉取失败则按已配处理，不挡住用户）。
+function apiOpenMenuOrKeyDialog() {
+  if (apiFirstRunOpen) return // key 引导卡已经开着：点按钮不再叠一层，也不开菜单
+  if (menuOpen) { toggleMenu(); return }
   var missing = apiSiteKeyMissing()
   if (missing === null) {
     loadApiModels(function () {
-      try { if (menuOpen && apiSiteKeyMissing() === true) openApiModelPanel(null, { firstRun: true }) } catch (err) {}
+      try {
+        if (menuOpen || apiFirstRunOpen) return
+        if (apiSiteKeyMissing() === true) openApiModelPanel(null, { firstRun: true })
+        else toggleMenu()
+      } catch (err) { toggleMenu() }
     })
     return
   }
   if (missing === true) openApiModelPanel(null, { firstRun: true })
+  else toggleMenu()
 }
 function toggleMenu() {
   // v865（issue #237 后半）：打开菜单时补读一次 size 配置（别的端/别的标签改过也能立刻生效）
@@ -19590,8 +19607,8 @@ function toggleMenu() {
   // 汉堡按钮关闭菜单时同样复位用量子界面(用量态时滑回主菜单态,
   // 主菜单态时 hideUsageSub 守卫直接返回),避免下次打开仍停留在用量视图
   if (!menuOpen) { closeUsagePanel(); closeAboutPanel() }
-  // fork（API3D 专属）：菜单要靠站点余额/记账才有意义 —— 没 key 时用引导遮罩挡住
-  if (menuOpen) apiFirstRunGuard()
+  // fork（API3D 专属）：菜单开关本身不再做 key 检查 —— 所有入口都走 apiOpenMenuOrKeyDialog()，
+  // 没 key 时菜单根本不会被打开（见该函数）。
 }
 function closeMenu() {
   menuOpen = false
