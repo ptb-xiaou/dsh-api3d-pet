@@ -5019,22 +5019,37 @@ function openApiModelPanel(modelId, opts) {
       if (kv) body.keyValue = kv
       return body
     }
-    if (!isNew && !needKey) {
-      var testBtn = apiBtn('测试连通性', 'dshwv-bubbtn dshwv-bubbtn-no', function () {
-        testBtn.disabled = true
-        testBtn.textContent = '测试中…'
-        postApiModels({ action: 'probe', id: m.id }, function (r) {
-          testBtn.disabled = false
-          testBtn.textContent = '测试连通性'
-          var okP = !!(r && r.ok)
-          // 结果只用弹窗呈现（模型面板 z=29000，确认弹窗需临时提到其之上）
-          try { confirmMask.style.setProperty('z-index', '29500', 'important') } catch (err) {}
-          showConfirm(okP ? ('✓ 测试通过\n' + (r.detail || '')) : ('⚠ 测试失败\n' + ((r && r.error) || '未知原因')), function () {}, '知道了')
-        })
+    var testBtn = apiBtn('测试连通性', 'dshwv-bubbtn dshwv-bubbtn-no', function () {
+      var typed = String(keyInp.value || '').trim()
+      // fork（m03727）：还没 key 时先要求有东西可测（会把「刚粘贴、还没保存的 key」发给宿主做一次只读探测）
+      if (needKey && !typed) {
+        status.textContent = '请先粘贴 API Key 再测试'
+        try { keyInp.focus() } catch (err) {}
+        return
+      }
+      testBtn.disabled = true
+      testBtn.textContent = '测试中…'
+      var probeBody = { action: 'probe', id: (m && m.id) || 'api3d_site' }
+      // 输入框里有内容就带上：宿主只对内置站点放行「用未保存的 key 探测」，不落盘、不动已保存的 key
+      if (typed) probeBody.keyValue = typed
+      postApiModels(probeBody, function (r) {
+        testBtn.disabled = false
+        testBtn.textContent = '测试连通性'
+        var okP = !!(r && r.ok)
+        // 结果只用弹窗呈现（模型面板 z=29000，确认弹窗需临时提到其之上）
+        try { confirmMask.style.setProperty('z-index', '29500', 'important') } catch (err) {}
+        showConfirm(okP ? ('✓ 测试通过\n' + (r.detail || '')) : ('⚠ 测试失败\n' + ((r && r.error) || '未知原因')), function () {}, '知道了')
       })
-      btns.appendChild(testBtn)
-    }
+    })
+    btns.appendChild(testBtn)
     btns.appendChild(apiBtn('保存', 'dshwv-bubbtn dshwv-bubbtn-ok', function () {
+      // fork（m03727）：没 key 的状态下空着输入框点「保存」不能算成功 —— 否则遮罩一关、菜单照样打开，
+      //   用户以为配好了，其实余额 / 今日已用一条都读不到。这里直接拦下来并提示。
+      if (needKey && !String(keyInp.value || '').trim()) {
+        status.textContent = '请先粘贴 API Key 再保存（没有 key 时余额与今日已用都读不到）'
+        try { keyInp.focus() } catch (err) {}
+        return
+      }
       status.textContent = '保存中…'
       postApiModels(collect(), function (d) {
         if (!d || !d.ok) { status.textContent = '保存失败: ' + ((d && d.error) || '未知错误'); return }
@@ -5059,9 +5074,8 @@ function openApiModelPanel(modelId, opts) {
         refreshModelList()
       })
     }))
-    // fork（API3D 专属）：引导遮罩不能「取消」—— 它挡住的正是要用余额的菜单；
-    // 普通面板（已配好 key，只是来改配置）才有「取消」。
-    if (!forceFirstRun) btns.appendChild(apiBtn('取消', 'dshwv-bubbtn dshwv-bubbtn-no', closeApiModelPanel))
+    // fork（m03727）：引导卡也给了关闭入口（只是关掉而已；没配 key 时下次点菜单仍会再弹）
+    btns.appendChild(apiBtn(forceFirstRun ? '关闭' : '取消', 'dshwv-bubbtn dshwv-bubbtn-no', closeApiModelPanel))
     card.appendChild(btns)
     // —— 布局整理（v663）——
     // 1) 按钮行固定在卡片最下方（卡片自身滚动，按钮 sticky）
@@ -5093,8 +5107,8 @@ function openApiModelPanel(modelId, opts) {
       if (delKeyRow && delKeyRow.parentNode) delKeyRow.parentNode.removeChild(delKeyRow)
     } catch (err) {}
     mask.appendChild(card)
-    // 普通面板：点遮罩空白处可以关掉。引导遮罩（forceFirstRun）不响应 —— 必须先把 key 填上。
-    if (!forceFirstRun) mask.addEventListener('click', function (e) { if (e.target === mask) closeApiModelPanel() })
+    // fork（m03727）：点弹窗以外的区域一律关掉（引导卡同样适用；没配 key 时下次点菜单还会再弹）
+    mask.addEventListener('click', function (e) { if (e.target === mask) closeApiModelPanel() })
     dshwBodyAppend(mask)
     apiModelMaskEl = mask
     if (forceFirstRun) {
