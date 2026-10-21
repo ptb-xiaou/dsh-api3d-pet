@@ -20,7 +20,7 @@
 
 | 你要改的东西                                                 | 用哪条分支       | 说明                                     |
 | ------------------------------------------------------------ | ---------------- | ---------------------------------------- |
-| **DSH Web 界面里的挂件**（本仓库的主产品，README 描述的就是它） | **`main`**       | npm 包 `dsh-whale-widget`                |
+| **DSH Web 界面里的挂件**（本仓库的主产品，README 描述的就是它） | **`main`**       | npm 包 `dsh-api3d-pet`                |
 | Codex 桌面伴随挂件                                           | `For-Codex`      | npm 包 `api-balance-whale`，**独立维护** |
 | Windows 桌面版（Tauri）                                      | `For–WinDesktop` | /                                        |
 
@@ -31,7 +31,7 @@
 下面是你打开仓库第一时间看到的东西。行数按仓库内 LF 内容统计（git 里的真实内容，不是 Windows 工作区的 CRLF），口径与维护者的自检脚本一致。
 
 ```
-dsh-whale-widget/
+dsh-api3d-pet/
 ├── package.json                     35 行   DSH bundle 插件元数据（dsh.bundle.patch → cordis.patch.yml）
 ├── cordis.patch.yml                 15 行   插件挂载声明
 ├── README.md                       471 行   安装 / 使用 / 定价 / 完整目录结构（动代码前先读它）

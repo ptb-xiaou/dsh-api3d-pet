@@ -23,10 +23,10 @@
 
 动态 Cordis 插件（`cordis_define`/`cordis_run`）的定义存在进程内存中，页面重载后需要重新 run，**无法**满足「每打开界面就自动启用」。因此采用**标准 DSH bundle 插件**（npm 包 + `dsh.bundle.patch`）挂进 Web 组合：
 
-1. **插件包**：`dsh-whale-widget/package.json` 声明 `dsh.bundle.patch`，`lib/index.js` 为宿主插件入口（ESM）。
-2. **导出形式**：`const name = 'dsh-whale-widget'; const inject = ['webServer', 'credentials']; function apply(ctx) {...}; export { name, inject, apply }`（具名导出，与 `package.json` 的 `name` 一致）。
-3. **挂载声明**：包内 `cordis.patch.yml` 用 `name: dsh-whale-widget` 把插件插入配置树——**不要**用 `name: ./xxx.mjs?v=N` 形式（那是手动复制到 profile 时的热更写法，发布给他人会因路径不存在而破坏启动）。
-4. **安装/更新**：`dsh plugin --profile web add dsh-whale-widget`；本地开发在**仓库根目录**（即 `package.json` 所在目录）用 `dsh plugin --profile web add link:.`（注意：根目录就是插件包，**不要**写成 `link:.\dsh-whale-widget` 这种带子目录的路径，否则会被 pnpm 装成普通依赖而非 bundle 层）。安装后重启 `dsh web`。
+1. **插件包**：`dsh-api3d-pet/package.json` 声明 `dsh.bundle.patch`，`lib/index.js` 为宿主插件入口（ESM）。
+2. **导出形式**：`const name = 'dsh-api3d-pet'; const inject = ['webServer', 'credentials']; function apply(ctx) {...}; export { name, inject, apply }`（具名导出，与 `package.json` 的 `name` 一致）。
+3. **挂载声明**：包内 `cordis.patch.yml` 用 `name: dsh-api3d-pet` 把插件插入配置树——**不要**用 `name: ./xxx.mjs?v=N` 形式（那是手动复制到 profile 时的热更写法，发布给他人会因路径不存在而破坏启动）。
+4. **安装/更新**：`dsh plugin --profile web add dsh-api3d-pet`；本地开发在**仓库根目录**（即 `package.json` 所在目录）用 `dsh plugin --profile web add link:.`（注意：根目录就是插件包，**不要**写成 `link:.\dsh-api3d-pet` 这种带子目录的路径，否则会被 pnpm 装成普通依赖而非 bundle 层）。安装后重启 `dsh web`。
 5. **可迁移路径**：`lib/index.js` 顶部用 `fileURLToPath(import.meta.url)` 推得 `PACKAGE_ROOT`，图片/音效优先 `path.join(PACKAGE_ROOT, 'assets', ...)`；尺寸/账本写 `$DSH_HOME`（`process.env.DSH_HOME || ~/.dsh`）下。本机旧绝对路径仅作 fallback，方便旧手动安装平滑升级。
 6. **宿主上下文**：宿主插件运行在宿主进程（非动态沙箱），可直接使用全局 `fetch`（可带自定义请求头）、`node:fs`、`AbortSignal.timeout` 等 Node API。
 7. **生命周期**：把所有 `webServer.register` / `tapIndex` 返回的 disposer 收集进数组，挂到 `ctx.effect(() => () => { for (const d of disposers) try { d() } catch {} })`，HMR 重载时自动清理。
@@ -182,7 +182,7 @@ div.dshwv-root（position:fixed，承载定位与翻转）
 ## 六、关键技术结论（踩坑记录，供复用）
 
 1. **动态插件无法自启**：定义在进程内存、页面重载需重 run；要常驻自启必须静态化挂进 profile 组合。
-2. **发布包 patch 不用 `?v=`**：`cordis.patch.yml` 写 `name: dsh-whale-widget`（bundle 插件名）；`?v=N` 只用于手动复制到 profile 的本机热更（`.mjs` ESM 缓存需查询串破缓存），发布给他人会因路径不存在破坏启动。
+2. **发布包 patch 不用 `?v=`**：`cordis.patch.yml` 写 `name: dsh-api3d-pet`（bundle 插件名）；`?v=N` 只用于手动复制到 profile 的本机热更（`.mjs` ESM 缓存需查询串破缓存），发布给他人会因路径不存在破坏启动。
 3. **profile 补丁热更新**：本机开发时 `cordis.patch.yml` 被 `watchUserPatches` 实时监视，改文件即生效、无需重启。
 4. **热更新破缓存**：本机插件必须用 `.mjs` + `name: ./xxx.mjs?v=N`，每次改代码 N+1；`.cjs` 的 require 缓存忽略查询串，实测无法热更。
 5. **webServer handler 抛错**：异步 handler 抛异常会被 dispatcher 捕获并回 400 空响应；务必让路由永远返回 JSON（try/catch 全包）。
@@ -196,7 +196,7 @@ div.dshwv-root（position:fixed，承载定位与翻转）
 
 ## 七、部署与验证
 
-1. 将 `dsh-whale-widget` 作为本地包安装：在仓库根目录 `dsh plugin --profile web add link:.`（或发布后 `dsh plugin --profile web add dsh-whale-widget`），然后重启 `dsh web`。
+1. 将 `dsh-api3d-pet` 作为本地包安装：在仓库根目录 `dsh plugin --profile web add link:.`（或发布后 `dsh plugin --profile web add dsh-api3d-pet`），然后重启 `dsh web`。
 2. 验证：`curl http://127.0.0.1:3080/dsh-whale/image.png`（200 image/png）、`/dsh-whale/balance.json`（200 JSON，含真实余额与 todayUsage）、`/dsh-whale/size.json`（GET/PUT 读写回路）、`/dsh-whale/widget.js`（200 JS）、`/dsh-whale/sound/press.mp3?set=duck`（200 audio/mpeg）、`curl http://127.0.0.1:3080/`（index 含 widget.js 脚本标签）。
 3. 浏览器 **F5 刷新页面**后出现挂件。
 4. 交互自测：拖拽 + 四边四分之一吸附（含角落组合）、左吸附镜像翻转、菜单（大小/音效/音量/用量）、按压 Q 弹 + 音效、点击鲸鱼弹气泡 → 首次点击切台词 → 再点关闭、5 秒自动收起、60s 自动刷新、余额变化数字滚动、记账模式跨天归档。

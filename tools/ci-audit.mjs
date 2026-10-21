@@ -308,7 +308,7 @@ run('3', '检查打包后是否可以运行', (problems, notes) => {
     }
   }
   if (pkg.main && !has(pkg.main)) problems.push('package.json 的 main 指向不存在的文件：' + pkg.main)
-  // v0.4.0 补（真机反馈：git 安装的用户报 `ENOENT ... node_modules/dsh-whale-widget/icon.png`）：
+  // v0.4.0 补（真机反馈：git 安装的用户报 `ENOENT ... node_modules/dsh-api3d-pet/icon.png`）：
   //   `files` 里列的每一项都必须**真的在 git 仓库里**（被跟踪）—— 否则：
   //     · npm / zip 安装：没事（打包时按磁盘取，图标在本地存在）；
   //     · **git URL 安装**：克隆下来就少了这个文件 ⇒ DSH 读插件元信息（package.json 的 icon 字段）时 ENOENT。

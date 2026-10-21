@@ -1,13 +1,15 @@
 {
-  "name": "dsh-whale-widget",
+  "name": "dsh-api3d-pet",
   "version": "0.4.2",
-  "description": "DSH Web 界面右下角的 DeepSeek 余额小鲸鱼挂件:余额/今日已用/峰谷定价、自定义泡泡点击序列(文本/余额/今日/峰谷/图片/随机语句与并列加权选择)、逐行样式与字体、悬浮快捷编辑、音效与每轮消耗、自定义角色/动图/音效、吸附与翻转自定义",
+  "description": "API3D（api3d.cn）站点专属的 DSH 桌宠挂件：右下角常驻鲸鱼气泡显示站点余额 / 今日已用 / 每轮消耗，泡泡点击序列、模块化排版、并列加权出泡、随机语句与图片、逐行样式与字体、音效、吸附与翻转都可自定义。站点地址与接口字段已内置，装好后只需填一次 API Key。",
   "keywords": [
     "dsh",
     "dsh-plugin",
+    "api3d",
     "deepseek-harness",
     "balance",
-    "widget"
+    "widget",
+    "desktop-pet"
   ],
   "type": "module",
   "main": "lib/index.js",
@@ -20,14 +22,6 @@
     "README.md",
     "PROVENANCE.md"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget.git"
-  },
-  "bugs": {
-    "url": "https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget/issues"
-  },
-  "homepage": "https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget#readme",
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

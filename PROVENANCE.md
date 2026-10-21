@@ -2,6 +2,8 @@
 
 本仓库的**代码**按 MIT 许可（见 [`LICENSE`](LICENSE)）。`assets/` 目录下的**美术素材**（图片 / 动图 / 音效）**不在 MIT 覆盖范围内**，按下面的说明「原样提供」。
 
+> ⚠️ **本副本是本地 fork（项目名：API3D 桌宠 / `dsh-api3d-pet`，API3D 站点专属版）**：基于 [MeteorNOX/DeepSeek-Balance-Whale-Widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) v0.4.2（上游 commit `5247dd6`）改造，功能改动见 README「站点配置（API3D 专属）」与「主气泡余额来源：切到 API3D」两节，要点是：① 主气泡余额来源固定为站点账单接口（`https://api3d.cn/dashboard/billing/subscription` 的 `balance` + 当日 `usage.total_usage_usd`），**站点地址 / 凭据名 / 币种 / 接口与字段全部内置，用户只需在「API3D 站点设置」里填一次 API Key**；② **整体移除**上游的官方 DeepSeek 余额链路（`api.deepseek.com` / `DEEPSEEK_API_KEY` / DSH 账号登录态）；③ 移除与本站点无关的多厂商模板、Codex 本机会话统计、厂商订阅额度接口，以及界面上「添加模型 / 厂商模板 / 接口手填 / 汇率」等通用适配面。上游代码与本次改动同为 MIT；`assets/` 素材的许可范围**不因 fork 而改变**，仍按本文档执行。
+
 ## 一、许可范围
 
 | 范围 | 许可 |

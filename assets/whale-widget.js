@@ -143,7 +143,7 @@ function dshwvAudioWarn(url, err) {
   dshwvAudioLastErr = { url: String(url || ''), error: msg, at: new Date().toISOString() }
   if (dshwvAudioWarned[url]) return
   dshwvAudioWarned[url] = 1
-  try { console.warn('[小鲸鱼] 音频加载/解码失败：' + url + ' → ' + msg) } catch (e) {}
+  try { console.warn('[API3D 桌宠] 音频加载/解码失败：' + url + ' → ' + msg) } catch (e) {}
 }
 function nowMs() { try { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now() } catch (err) { return Date.now() } }
 function dshwvAudioBuffer(url) {
@@ -678,7 +678,7 @@ var css = [
   '.dshwv-ver{height:15px;line-height:15px;font-size:9px;text-align:center;color:#203170;opacity:.5;pointer-events:none;user-select:none;overflow:hidden;white-space:nowrap;margin:0}',
   '.dshwv-menu.dshwv-menu-open .dshwv-ver{pointer-events:auto;cursor:pointer}',
   '.dshwv-menu.dshwv-menu-open .dshwv-ver:hover{opacity:.85;text-decoration:underline}',
-  // v793（用户要求）：点版号弹出的「关于 / 自检」子视图 —— 与「小鲸鱼记账」同款（占满按钮上方区域、内部滚动）
+  // v793（用户要求）：点版号弹出的「关于 / 自检」子视图 —— 与「API3D 记账」同款（占满按钮上方区域、内部滚动）
   // v795：整体重排（更紧凑）并补上滚动手感/滚动条，观感向记账子菜单看齐
   '.dshwv-about{display:none;height:100%;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;padding:0 4px 10px 2px;color:#203170;font-size:12px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:rgba(32,49,112,.3) transparent}',
   '.dshwv-about::-webkit-scrollbar{width:6px}',
@@ -1280,7 +1280,7 @@ var styleEl = document.createElement('style')
 // 「当前正在物化的那个插件」名下，之后该插件热重载/失效时 removeOwnedStyles 会把它
 // 一起删掉。样式一没，挂件 20 多个 dshwv-* 节点就从 position:fixed 掉回文档流堆在
 // 页面底部（页面被撑到几千像素高）。打上自己的名字后就不会被任何人认领/删除。
-styleEl.setAttribute('data-plugin', 'dsh-whale-widget')
+styleEl.setAttribute('data-plugin', 'dsh-api3d-pet')
 styleEl.textContent = css
 document.head.appendChild(styleEl)
 
@@ -1345,7 +1345,7 @@ try {
   if (initRoleId && initRoleId !== 'default') initRoleUrl = '/dsh-whale/role-image.png?id=' + encodeURIComponent(initRoleId)
 } catch (err) {}
 img.src = initRoleUrl
-img.alt = 'DeepSeek 余额'
+img.alt = 'API3D 余额'
 img.draggable = false
 
 var menuBtn = document.createElement('button')
@@ -1577,7 +1577,7 @@ function dshwCustSel(sel, opts) {
     if (menu.parentNode !== document.body) dshwBodyAppend(menu)
     dshwDropOpen(menu, btn)
     // 可选底部参照元素:展开高度不超过该元素的上缘(内部滚动),用于
-    // 主菜单内“任务结束音效”等下拉,避免列表盖住底部「小鲸鱼记账」按钮
+    // 主菜单内“任务结束音效”等下拉,避免列表盖住底部「API3D 记账」按钮
     if (opts && typeof opts.bottom === 'function') {
       try {
         var bEl = opts.bottom()
@@ -1594,11 +1594,11 @@ function dshwCustSel(sel, opts) {
   sync()
   return { sync: sync, refresh: function () { fill(); sync() }, btn: btn, wrap: wrap }
 }
-// 用量:小鲸鱼记账为唯一记账方式;「用量记录」按钮打开历史用量子面板
+// 用量:API3D 记账为唯一记账方式;「用量记录」按钮打开历史用量子面板
 var usageRecBtn = document.createElement('button')
 usageRecBtn.type = 'button'
 usageRecBtn.className = 'dshwv-roleimport'
-usageRecBtn.textContent = '- = 小鲸鱼记账 = -'
+usageRecBtn.textContent = '- = API3D 记账 = -'
 usageRecBtn.title = '查看今日/近7天/全部消费记录'
 usageRecBtn.addEventListener('click', function (e) {
   e.stopPropagation()
@@ -2155,7 +2155,7 @@ menuBox.appendChild(row6)
 var taskEndRowHost = document.createElement('div')
 taskEndRowHost.appendChild(taskEndSel)
 taskEndDrop = dshwCustSel(taskEndSel, {
-  // 菜单态:下拉高度不越过底部「小鲸鱼记账」按钮;窗口态(remind mask 存在)不做这个限制
+  // 菜单态:下拉高度不越过底部「API3D 记账」按钮;窗口态(remind mask 存在)不做这个限制
   bottom: function () { return window.__dshwRemindMask ? null : usageNavRow },
   scrollNames: true,
   isPinned: taskEndIsPinned,
@@ -2196,21 +2196,6 @@ var rowHide = menuRow()
 rowHide.appendChild(menuLabel('隐藏菜单按钮'))
 rowHide.appendChild(menuHideToggle)
 menuBox.appendChild(rowHide)
-// —— Codex 本机统计开关（issue #116）：v748 起**从主菜单挪进「Codex 模型的设置子菜单」** ——
-// 主菜单不再有这一项（它对没配 Codex 模型的用户没有意义）。宿主侧同样按"有没有 Codex 模型"兜底：
-// 没配 → 默认关闭、完全不扫 ~/.codex/sessions。这里只保留一个"当前挂载的那个复选框"的引用，
-// 供 setCodexStatsOn() 与配置读回时同步勾选状态（菜单是每次重建的，所以元素现建现用）。
-var codexStatsToggle = null
-function codexStatsCheckbox() {
-  var el = document.createElement('input')
-  el.type = 'checkbox'
-  el.className = 'dshwv-check'
-  el.checked = codexStatsOn !== false
-  el.title = '关闭后不再读取 ~/.codex/sessions 统计本机 Codex 用量（会话日志很大时建议关闭）'
-  el.addEventListener('change', function () { setCodexStatsOn(el.checked) })
-  codexStatsToggle = el
-  return el
-}
 // —— 资源管理:集中查看/删除已导入的图片与音频(角色图/泡泡图/音频片段/音效组) ——
 var rowRes = menuRow()
 var resOpenBtn = document.createElement('button')
@@ -2325,7 +2310,7 @@ var usageHideTimer = null
 var usageShowTimer = null
 function setUsageNavBtn(inUsage) {
   try {
-    usageRecBtn.textContent = inUsage ? '‹ 返回' : '- = 小鲸鱼记账 = -'
+    usageRecBtn.textContent = inUsage ? '‹ 返回' : '- = API3D 记账 = -'
     usageRecBtn.title = inUsage ? '返回主菜单' : '查看今日/近7天/全部消费记录'
   } catch (err) {}
 }
@@ -2482,7 +2467,7 @@ function hideUsageSub() {
 }
 function closeUsagePanel() { hideUsageSub() }
 // ===== v793（用户要求）：点菜单底部版号 → 「关于 / 自检」子视图 =====
-// 与「小鲸鱼记账」同款观感（占满按钮上方区域 + 内部滚动 + 底部按钮变「‹ 返回」），
+// 与「API3D 记账」同款观感（占满按钮上方区域 + 内部滚动 + 底部按钮变「‹ 返回」），
 // 但**刻意不复用**那套带刷新定时器/滚动恢复/悬浮守卫的编排代码 —— 这里只需要"进去、出来"两件事，
 // 复制一小段机制比改动那段已经很稳定的记账视图风险更低（记账视图有 `_v761` 326 项探针钉着）。
 var aboutPanel = null
@@ -2632,7 +2617,7 @@ function aboutDiagText(d) {
   var L = []
   try {
     var p = d && d.plugin || {}, b = d && d.build || {}, r = d && d.runtime || {}
-    L.push('小鲸鱼挂件诊断信息')
+    L.push('API3D 桌宠诊断信息')
     L.push('版本: ' + (p.label || p.version || '?') + '（' + (p.channel === 'dev' ? '开发版' : '正式版') + '）')
     L.push('客户端: ' + aboutClientKind())
     L.push('宿主文件: ' + (b.host && b.host.path || '?') + ' · ' + aboutFmtBytes(b.host && b.host.bytes) + ' · ' + aboutFmtTime(b.host && b.host.mtime))
@@ -2646,7 +2631,6 @@ function aboutDiagText(d) {
     if (d && d.ledger) L.push('记账: ' + (d.ledger.error ? ('读取失败 ' + d.ledger.error) : ('已记 ' + d.ledger.days + ' 天 · 最近观测 ' + aboutFmtTime(d.ledger.lastObservedAt) + (d.ledger.todayPartial ? ' · 今日为部分数据' : '') + (d.ledger.needsReview ? ' · 有待核对调整' : ''))))
     if (d && d.balance) L.push('余额取数: ' + (d.balance.ok ? '成功' : '失败') + ' · ' + (d.balance.ms != null ? d.balance.ms + ' ms' : '') + ' · ' + aboutFmtTime(d.balance.at) + (d.balance.error ? (' · ' + d.balance.error) : ''))
     else L.push('余额取数: 本次会话尚未取过')
-    if (d && d.codex) L.push('Codex 统计: ' + (d.codex.enabled ? ('已启用 · 最近扫描 ' + aboutFmtTime(d.codex.snapAt) + (d.codex.files != null ? (' · ' + d.codex.files + ' 个会话文件') : '')) : ('未启用（' + (d.codex.reason || '未配置') + '）')))
     if (aboutSelfResult) L.push('自检: ' + aboutSelfResult + (aboutSelfDetail ? ('（' + aboutSelfDetail + '）') : ''))
     // v805：来源**只在这里**出现（行里不显示），方便贴 issue 时知道是哪条路通的
     if (aboutLastUpdate) L.push('检查更新: ' + aboutLastUpdate + (aboutUpdateSource ? ('（源 ' + aboutUpdateSource + '）') : ''))
@@ -2728,9 +2712,9 @@ function aboutRender() {
   var p = d.plugin || {}, b = d.build || {}, r = d.runtime || {}
   var isDev = p.channel === 'dev'
   var dshVer = aboutDshVersion(r)
-  // 顶行：标题 + 刷新图标（v803：挪到「小鲸鱼挂件」**右侧**）+ 版号徽标 + 通道徽标 + 客户端徽标
+  // 顶行：标题 + 刷新图标（v803：挪到「API3D 桌宠」**右侧**）+ 版号徽标 + 通道徽标 + 客户端徽标
   var h = aboutEl('div', 'dshwv-about-h')
-  h.appendChild(aboutEl('span', 'dshwv-about-name', '小鲸鱼挂件'))
+  h.appendChild(aboutEl('span', 'dshwv-about-name', 'API3D 桌宠'))
   // v799：刷新按钮是小圆形箭头图标（就是 DSH 那个刷新图标：圆环缺口在右上 + 实心小箭头）。
   //   用内联 SVG 画，比字体符号稳（不受字体影响），颜色跟面板走。
   var refreshBtn = aboutEl('button', 'dshwv-about-refresh')
@@ -2867,13 +2851,16 @@ function aboutRender() {
       d.balance.ok ? 'dshwv-about-ok' : 'dshwv-about-bad')
     if (d.balance.error) row('余额失败原因', String(d.balance.error).slice(0, 22) + (String(d.balance.error).length > 22 ? '…' : ''), '余额失败原因: ' + d.balance.error, 'dshwv-about-bad')
   } else row('余额取数', '本次会话尚未取过', '余额取数: 本次会话尚未取过（点一次鲸鱼会触发）')
-  if (d.codex && d.codex.enabled) {
-    row('Codex 统计', '已启用' + (d.codex.files != null ? ' · ' + d.codex.files + ' 个会话' : ''),
-      'Codex 统计: 已启用 · 最近扫描 ' + aboutFmtTime(d.codex.snapAt) + ' · 跳过 ' + (d.codex.skipped != null ? d.codex.skipped : '—') + ' · 延后 ' + (d.codex.deferred != null ? d.codex.deferred : '—'),
-      'dshwv-about-ok')
-  } else {
-    row('Codex 统计', '未启用', 'Codex 统计: 未启用 —— ' + ((d.codex && d.codex.reason) || '未配置 Codex 模型'))
+  // fork（API3D 专属）：站点分组 —— 解释「主气泡那个数字」来自哪个分组
+  var srcM = null
+  for (var smi = 0; smi < apiModels.length; smi++) {
+    if (apiModels[smi] && apiModels[smi].displayAsBalance === true) { srcM = apiModels[smi]; break }
   }
+  if (srcM) {
+    var gTitle = String(srcM.planTitle || '')
+    row('站点分组', gTitle ? (gTitle.length > 22 ? gTitle.slice(0, 22) + '…' : gTitle) : '未知',
+      '站点分组: ' + (gTitle || '未知') + (srcM.planNote ? ('（' + srcM.planNote + '）') : ''))
+  } else row('站点分组', '未配置余额来源', '站点分组: 未配置余额来源（在模型面板勾「主气泡余额来源」）')
   // v798 起：打开面板时自动跑一次；v802（用户要求）：这两行**不复制**，点击 = 重新执行。
   actRow('自检', aboutSelfResult || '检查中…',
     '点击重新自检：只从浏览器访问本机两条插件路由（不联网、不耗 token）' + (aboutSelfDetail ? ('\n上次：' + aboutSelfDetail) : ''),
@@ -2892,8 +2879,8 @@ function aboutRender() {
     bb.addEventListener('click', function (e) { e.stopPropagation(); fn() })
     acts.appendChild(bb)
   }
-  btn('仓库', function () { aboutOpenLink('https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget') })
-  btn('更新日志', function () { aboutOpenLink('https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget/releases') })
+  btn('API3D 站点', function () { aboutOpenLink('https://api3d.cn') })
+  btn('上游来源', function () { aboutOpenLink('https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget') })
   btn('复制以上全部信息', function () { aboutCopyText(aboutDiagText(aboutData)) }, true)
   el.appendChild(acts)
   el.appendChild(aboutEl('div', 'dshwv-about-note', '点任意一行复制该行；每节标题右侧可整节复制。自检只访问本机两条插件路由（不联网、不耗 token）。前端改动需 Ctrl+F5，宿主改动需重启服务。'))
@@ -3161,7 +3148,7 @@ function buildUsageSubShell() {
   // 居中小标题
   var subTitle = document.createElement('div')
   subTitle.className = 'dshwv-usage-subtitle'
-  subTitle.textContent = '- = 小鲸鱼记账 = -'
+  subTitle.textContent = '- = API3D 记账 = -'
   usagePanel.appendChild(subTitle)
   // 预警与预算设置区(静态)
   buildUsageSettingsArea()
@@ -4525,7 +4512,7 @@ function usageAlertBudgetEditor(key, onSave) {
     remindZStyle.id = 'dshw-remind-overlay-z'
     // 同上（PR #114）：本文本表同样必须自带 data-plugin，否则会被别的客户端插件
     // 热重载时顺带删掉，提醒编辑期的遮罩层级就失效了。
-    remindZStyle.setAttribute('data-plugin', 'dsh-whale-widget')
+    remindZStyle.setAttribute('data-plugin', 'dsh-api3d-pet')
     // 提醒编辑期间:窗口内可能弹出的全屏遮罩(确认/裁剪/音频/快照)统一置顶,杜绝层级错位。
     // 注意:不要把 .dshwv-usage-mask 放进来——「模型子菜单/模型设置」用的是这个类(29000),
     // 一提权就会反盖到提醒编辑器(30000)上面。
@@ -4651,6 +4638,20 @@ function apiModelById(id) {
   for (var i = 0; i < apiModels.length; i++) if (apiModels[i] && apiModels[i].id === id) return apiModels[i]
   return null
 }
+// fork（API3D 专属）：站点条目 —— 注册表里唯一一条 provider==='api3d' 的模型
+function apiSiteEntry() {
+  for (var i = 0; i < apiModels.length; i++) {
+    var sm = apiModels[i]
+    if (sm && sm.builtin !== true && sm.provider === 'api3d') return sm
+  }
+  return null
+}
+// 站点 key 状态：true=确认没配（菜单要被引导遮罩挡住）；false=已配；null=数据还没到（先拉一次再判）
+function apiSiteKeyMissing() {
+  if (!apiModelsLoaded) return null
+  var sm = apiSiteEntry()
+  return !(sm && sm.hasKey === true)
+}
 // 「充值 / 余额校正」只属于固定的 DeepSeek（内置）：宿主在模型条目里下发 canAdjustBalance，
 // 前端据此决定要不要在设置菜单里给出入口 —— 手动新增的同名模型、Kimi 等其它厂商都不会有，
 // 新增模板也不会自动继承（宿主还会在路由层再校验一次，见 balance-adjustments.json）。
@@ -4681,14 +4682,22 @@ function apiFmtMoney(v, cur) {
   var n = Number(v)
   if (!isFinite(n)) return '--'
   var c = String(cur || '')
-  if (c === 'USD') return '$ ' + n.toFixed(2)
-  if (c === 'CNY') return '¥ ' + n.toFixed(2)
-  return n.toFixed(2) + (c ? ' ' + c : '')
+  var a = Math.abs(n)
+  var s
+  // fork（API3D 专属）：站点单据常是「一次调用几厘钱」，两位小数会永远显示 0.00 ⇒ 小额自动多给几位
+  if (n === 0) s = '0.00'
+  else if (a < 0.01) s = n.toFixed(6).replace(/0+$/, '').replace(/\.$/, '')
+  else if (a < 1) s = n.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')
+  else s = n.toFixed(2)
+  if (c === 'USD') return '$ ' + s
+  if (c === 'CNY') return '¥ ' + s
+  return s + (c ? ' ' + c : '')
 }
 // 「今日已用」的来源标注（未知就返回空串，调用方不显示括号）
 function apiUsageSourceLabel(src) {
   var s = String(src || '')
   if (s === 'ledger' || s === 'balance') return '余额差记账'
+  if (s === 'api') return '站点接口'
   if (s === 'events') return '本地估算'
   if (s === 'balance-observed') return '已观测消费'
   if (s === 'balance-needs-review') return '待核对余额调整'
@@ -4866,7 +4875,7 @@ function apiBtn(label, cls, fn) {
   if (fn) b.addEventListener('click', function (e) { e.stopPropagation(); fn() })
   return b
 }
-function openApiModelPanel(modelId) {
+function openApiModelPanel(modelId, opts) {
   try {
     closeApiModelPanel()
     var isNew = !modelId
@@ -4878,6 +4887,11 @@ function openApiModelPanel(modelId) {
     }
     var m = isNew ? null : apiModelById(modelId)
     if (!isNew && !m) return
+    // fork（API3D 专属）：还没有 key（或首次安装）时，这个面板收窄成「只填一行 API Key」的引导卡，
+    // 站点地址 / 接口字段 / 口径说明全部收起来 —— 减少用户需要理解的东西。
+    // forceFirstRun = 打开菜单时发现没 key ⇒ 直接摆一张**挡住菜单**的引导遮罩（不能取消，只能填）。
+    var forceFirstRun = !!(opts && opts.firstRun)
+    var needKey = forceFirstRun || isNew || !(m && m.hasKey)
     var mask = document.createElement('div')
     mask.className = 'dshwv-usage-mask'
     mask.style.zIndex = '29000'
@@ -4889,57 +4903,63 @@ function openApiModelPanel(modelId) {
     card.style.padding = '14px 16px'
     card.style.boxSizing = 'border-box'
     card.style.textAlign = 'left'
+    if (needKey) {
+      // 引导卡：亮一点、窄一点，像"必须处理的一步"而不是一个可以随便翻的大面板
+      card.style.width = 'min(400px,92vw)'
+      card.style.border = '1px solid #1677ff'
+      card.style.boxShadow = '0 14px 40px rgba(0,0,0,.4)'
+    }
     var title = document.createElement('div')
     title.className = 'dshwv-bubtitle'
-    title.textContent = isNew ? '新增模型（自定义 API）' : ('模型设置 · ' + (m.name || m.id))
+    title.textContent = needKey ? '配置 API3D API Key' : 'API3D 站点设置'
     card.appendChild(title)
     var status = document.createElement('div')
     status.className = 'dshwv-bubhint'
     status.style.margin = '4px 0 8px'
-    status.textContent = isNew ? '选择厂商模板 → 填 API key → 保存' : (m.error ? ('⚠ ' + m.error) : (m.balanceMode === 'events' ? ('余额 —（无接口·按会话事件）· 今日已用 ' + apiFmtMoney(m.todayUsage, apiTodayCur(m))) : ('余额 ' + apiFmtMoney(m.balance, m.currency) + ' · 今日已用 ' + apiFmtMoney(m.todayUsage, apiTodayCur(m)) + (apiUsageSourceLabel(m.usageSource) ? ('（' + apiUsageSourceLabel(m.usageSource) + '）') : ''))))
+    status.textContent = needKey
+      ? (forceFirstRun
+          ? '还没配置 API Key：菜单里的余额、记账和提醒都要用它。粘一下 key 就能继续（站点地址已内置，保存后主气泡立刻出数）。'
+          : '首次使用：把 API Key 粘到下面（站点地址已内置），点「保存」后右下角就会显示 API3D 余额。')
+      : ((m && m.error) ? ('⚠ ' + m.error) : (isNew ? '填 API Key → 保存即可（站点地址与接口字段已内置）' : (m.balanceMode === 'events' ? ('余额 —（无接口·按会话事件）· 今日已用 ' + apiFmtMoney(m.todayUsage, apiTodayCur(m))) : ('余额 ' + apiFmtMoney(m.balance, m.currency) + ' · 今日已用 ' + apiFmtMoney(m.todayUsage, apiTodayCur(m)) + (apiUsageSourceLabel(m.usageSource) ? ('（' + apiUsageSourceLabel(m.usageSource) + '）') : '')))))
     card.appendChild(status)
-    // 名称 / 模板 / 币种
-    card.appendChild(apiSec('基本信息'))
-    var nameInp = apiTextInput(isNew ? '' : m.name, '例如 OpenRouter / 我的中转站')
-    card.appendChild(apiPanelRow('名称', nameInp))
-    // v726：厂商下拉按「首字母」排序 —— 英文按字母、中文按拼音首字母（host 下发的 sortKey），中英混排 A→Z；
-    // 同键（如 siliconflow CN/EN、moonshot CN/国际）再按名称排，保证顺序稳定。
-    var tplList = []
-    for (var ti = 0; ti < apiTemplates.length; ti++) {
-      if (apiTemplates[ti].builtin) continue
-      var tplName = String(apiTemplates[ti].name || apiTemplates[ti].id)
-      tplList.push({
-        id: apiTemplates[ti].id,
-        name: tplName,
-        // v724：官方「没有用 API key 查余额接口」的模板在下拉里直接标出来，避免选完以为坏了
-        label: tplName + (apiTemplates[ti].noBalanceApi ? '（无余额接口）' : ''),
-        sortKey: String(apiTemplates[ti].sortKey || tplName).toLowerCase(),
-      })
+    // fork（API3D 专属）：站点分组（从 billing/subscription 解析，host 下发）
+    if (!isNew && m.planTitle) {
+      var grpHint = document.createElement('div')
+      grpHint.className = 'dshwv-bubhint'
+      grpHint.style.margin = '0 0 8px'
+      grpHint.textContent = '站点分组：' + m.planTitle + (m.planNote ? '（' + m.planNote + '）' : '')
+      card.appendChild(grpHint)
     }
-    tplList.sort(function (a, b) {
-      if (a.sortKey < b.sortKey) return -1
-      if (a.sortKey > b.sortKey) return 1
-      if (a.name < b.name) return -1
-      if (a.name > b.name) return 1
-      return 0
-    })
-    var tplOpts = []
-    for (var tl = 0; tl < tplList.length; tl++) tplOpts.push([tplList[tl].id, tplList[tl].label])
-    var tplSel = apiSelectEl(tplOpts, isNew ? 'openrouter' : m.provider)
-    if (!isNew) tplSel.disabled = true
-    card.appendChild(apiPanelRow('厂商模板', tplSel))
-    // 模板口径说明（常显，**不**放进「高级」折叠区）：例如「官方无余额接口，按会话事件估算」
-    var tplNote = document.createElement('div')
-    tplNote.className = 'dshwv-bubhint'
-    tplNote.style.margin = '0 0 7px'
-    card.appendChild(tplNote)
-    var curSel = apiSelectEl([['CNY', '人民币 ¥'], ['USD', '美元 $']], isNew ? 'USD' : m.currency)
-    card.appendChild(apiPanelRow('币种', curSel))
-    // 密钥
+    // fork（API3D 专属）：站点地址 / 接口 / 字段全部内置 —— 用户只需要填一行 API Key
+    var tpl0 = null
+    for (var t0 = 0; t0 < apiTemplates.length; t0++) if (apiTemplates[t0].id === 'api3d') tpl0 = apiTemplates[t0]
+    var siteUrl = (tpl0 && tpl0.defaultBaseUrl) || 'https://api3d.cn'
+    if (needKey) {
+      // 引导卡：技术细节收起，只说一句"站点在哪"
+      var siteOne = document.createElement('div')
+      siteOne.className = 'dshwv-bubhint'
+      siteOne.style.margin = '0 0 8px'
+      siteOne.textContent = '站点：' + siteUrl + '（内置，无需配置）'
+      card.appendChild(siteOne)
+    } else {
+      card.appendChild(apiSec('站点'))
+      var siteAddr = document.createElement('div')
+      siteAddr.className = 'dshwv-bubhint'
+      siteAddr.style.margin = '0 0 7px'
+      siteAddr.textContent = '站点地址：' + siteUrl + '（内置，不用配置）'
+      card.appendChild(siteAddr)
+      var chHint = document.createElement('div')
+      chHint.className = 'dshwv-bubhint'
+      chHint.style.margin = '0 0 7px'
+      chHint.textContent = '余额取 billing/subscription 的 balance；今日已用取 billing/usage 当天的 total_usage_usd；金额就是人民币，不做汇率折算。'
+      card.appendChild(chHint)
+      var tplNote = document.createElement('div')
+      tplNote.className = 'dshwv-bubhint'
+      tplNote.style.margin = '0 0 7px'
+      tplNote.textContent = (tpl0 && tpl0.apiNote) ? ('\u2139 ' + tpl0.apiNote) : ''
+      card.appendChild(tplNote)
+    }
     card.appendChild(apiSec('密钥'))
-    var keyRefInp = apiTextInput(isNew ? '' : m.keyRef, '凭据名，例如 OPENROUTER_API_KEY')
-    keyRefInp.title = '写入 DSH 官方凭据（.credentials.yaml）时使用的名字'
-    card.appendChild(apiPanelRow('凭据名', keyRefInp))
     var keyInp = document.createElement('input')
     keyInp.type = 'password'
     keyInp.className = 'dshwv-cropname'
@@ -4949,188 +4969,54 @@ function openApiModelPanel(modelId) {
     keyInp.style.height = '26px'
     keyInp.style.boxSizing = 'border-box'
     keyInp.style.textAlign = 'left'
-    keyInp.placeholder = isNew ? '粘贴 API key（保存时写入 DSH 凭据）' : '留空＝不改动现有密钥'
-    card.appendChild(apiPanelRow('API key', keyInp))
+    keyInp.placeholder = '粘贴 API key（保存时写入 DSH 凭据 API3D_API_KEY）'
+    card.appendChild(apiPanelRow('API Key', keyInp))
     var keyState = document.createElement('div')
     keyState.className = 'dshwv-bubhint'
     keyState.style.margin = '0 0 7px'
-    keyState.textContent = isNew ? '' : (m.hasKey ? '已配置密钥 ✓' : '尚未配置密钥')
+    keyState.textContent = needKey
+      ? '还没有 API Key：余额与今日已用都读不到（插件只读上面的站点账单接口，不会去请求任何官方接口，也不消耗模型额度）。'
+      : ((m && m.hasKey) ? '已配置密钥 \u2713（留空＝不改动）' : '还没有密钥：粘贴后点「保存」')
     card.appendChild(keyState)
+    // fork（API3D 专属）：获取 key 的入口放在说明之后 —— 用户看完就知道去哪注册、直接点走
+    var getKeyRow = document.createElement('div')
+    getKeyRow.className = 'dshwv-bubhint'
+    getKeyRow.style.margin = '0 0 8px'
+    getKeyRow.appendChild(document.createTextNode('还没有 API Key？到 '))
+    var getKeyLink = document.createElement('a')
+    getKeyLink.textContent = 'api3d.cn'
+    getKeyLink.style.color = '#1677ff'
+    getKeyLink.style.cursor = 'pointer'
+    getKeyLink.style.textDecoration = 'underline'
+    getKeyLink.addEventListener('click', function (e) {
+      e.stopPropagation()
+      e.preventDefault()
+      try { aboutOpenLink('https://api3d.cn') } catch (err) {}
+    })
+    getKeyRow.appendChild(getKeyLink)
+    getKeyRow.appendChild(document.createTextNode(' 注册 / 获取 API Key →'))
+    card.appendChild(getKeyRow)
     var delKey = apiBtn('删除密钥', 'dshwv-snapbtn dshwv-snapbtn-no', function () {
-      var ref = (keyRefInp.value || '').trim()
-      if (!ref) return
-      postApiModels({ action: 'delete-key', keyRef: ref }, function () {
+      postApiModels({ action: 'delete-key', keyRef: 'API3D_API_KEY' }, function () {
         keyState.textContent = '密钥已删除'
-        // 列表里的"已配置/未配置"显示在静态区模型行 → 必须重建子界面（只刷记录区不够）
         refreshModelList()
       })
     })
-    var delKeyRow = apiPanelRow('', delKey)
-    card.appendChild(delKeyRow)
-    // Base URL（中转站/自定义需要）
-    var baseInp = apiTextInput(isNew ? '' : m.baseUrl, '例如 https://my-gateway.example.com')
-    var baseRow = apiPanelRow('Base URL', baseInp)
-    card.appendChild(baseRow)
-    // 余额接口（自定义可改；模板默认自动带上）
-    // 用 host 下发的接口描述(balanceDesc)回填；m.balance 是数值，不能当描述用。
-    // v724：新增模型时改用「所选模板」的描述做初始值（编辑态仍以注册表里的实际配置为准）——
-    //      原来这里那句 `var tplDef = ...` 是从没被使用的死代码，一并删掉。
-    var bal = (m && m.balanceDesc && typeof m.balanceDesc === 'object') ? m.balanceDesc : {}
-    var tpl0 = null
-    for (var t0 = 0; t0 < apiTemplates.length; t0++) if (apiTemplates[t0].id === tplSel.value) tpl0 = apiTemplates[t0]
-    if (isNew && tpl0 && tpl0.balance) bal = tpl0.balance
-    var balUrl = apiTextInput(bal.url || '', '余额接口 URL（自定义时必填）')
-    var balUrlRow = apiPanelRow('余额接口', balUrl)
-    card.appendChild(balUrlRow)
-    var authInp = apiTextInput(bal.auth == null ? 'Bearer {key}' : bal.auth,
-      '默认 Bearer {key}；也可写多个头：x-api-key:{key};anthropic-version:2023-06-01（英文分号分隔）')
-    var authRow = apiPanelRow('请求头', authInp)
-    card.appendChild(authRow)
-    // v791（用户要求）：请求头支持"分号分隔的头名:值列表"（老写法不带冒号时仍按 Authorization 头处理）。
-    //   安全说明写在界面上：Host/Content-Length/Connection 等危险头会被忽略。
-    var authHint = document.createElement('div')
-    authHint.className = 'dshwv-bubhint'
-    authHint.style.margin = '0 0 6px'
-    authHint.textContent = '多个请求头用英文分号分隔，例：x-api-key:{key};anthropic-version:2023-06-01（{key} 会被替换成密钥）。' +
-      '不带冒号的写法（如 Bearer {key}）仍按 Authorization 头发送，老配置无需改。' +
-      'Host、Content-Length、Connection、Transfer-Encoding 等危险头一律被忽略。'
-    card.appendChild(authHint)
-    // v789（issue #190）：余额接口不再只能是 GET —— 可选 POST/PUT… + JSON 请求体。
-    //   请求体支持 {key}（密钥）、{base}（Base URL）、{uuid}（下面「请求参数」里的键）
-    var balMethod = apiSelectEl([['GET', 'GET（默认）'], ['POST', 'POST'], ['PUT', 'PUT'], ['PATCH', 'PATCH']],
-      String(bal.method || 'GET').toUpperCase() === 'POST' ? 'POST' : String(bal.method || 'GET').toUpperCase() === 'PUT' ? 'PUT' : String(bal.method || 'GET').toUpperCase() === 'PATCH' ? 'PATCH' : 'GET')
-    var balMethodRow = apiPanelRow('请求方法', balMethod)
-    card.appendChild(balMethodRow)
-    var balBody = apiTextInput(bal.body || '', '如 {"uuid":"{uuid}"}（非 GET 时以 JSON 发送）')
-    var balBodyRow = apiPanelRow('请求体', balBody)
-    card.appendChild(balBodyRow)
-    var prm = (m && m.params) || {}
-    var prmInp = apiTextInput(Object.keys(prm).map(function (k) { return k + '=' + prm[k] }).join(','), '请求体占位符，如 uuid=abc123（逗号分隔）')
-    var prmRow = apiPanelRow('请求参数', prmInp)
-    card.appendChild(prmRow)
-    // v789（issue #189）：0.3.15 起的"凭据目的地白名单"唯一例外必须能在界面上勾 ——
-    //   宿主侧 model.allowCustomHost 一直是齐的，缺的就是这个入口（README/FAQ 都在指引用户来勾）。
-    //   勾选/取消都**显式**传 true/false（宿主按 === true / === false 分支，缺省表示"不改动"）。
-    var allowHost = document.createElement('input')
-    allowHost.type = 'checkbox'
-    allowHost.checked = !!(m && m.balanceDesc && m.balanceDesc.allowCustomHost === true) || !!(m && m.allowCustomHost === true)
-    var allowHostRow = apiPanelRow('允许把凭据发送到自定义地址', allowHost)
-    card.appendChild(allowHostRow)
-    var allowHint = document.createElement('div')
-    allowHint.className = 'dshwv-bubhint'
-    allowHint.style.margin = '0 0 6px'
-    allowHint.textContent = '默认不勾：地址不是该厂商内置端点时，插件会拒绝把密钥发出去。自建网关（New API / 自托管 / Ollama 等）确认是自己的服务后再勾。' +
-      '该开关只能由本机（回环）来源的写请求置位，远端会话改不了它。'
-    card.appendChild(allowHint)
-    var jr = (bal.json || {})
-    var jRem = apiTextInput(jr.remaining || '', '如 balance_infos[0].total_balance')
-    var jTot = apiTextInput(jr.total || '', '如 data.total_credits')
-    var jUse = apiTextInput(jr.used || '', '如 data.total_usage')
-    var jSca = apiTextInput(jr.scale == null ? '' : jr.scale, '乘数，如 0.0001')
-    var jRemRow = apiPanelRow('余额字段', jRem)
-    var jTotRow = apiPanelRow('总量字段', jTot)
-    var jUseRow = apiPanelRow('已用字段', jUse)
-    var jScaRow = apiPanelRow('数值乘数', jSca)
-    card.appendChild(jRemRow)
-    card.appendChild(jTotRow)
-    card.appendChild(jUseRow)
-    card.appendChild(jScaRow)
-    var u = bal.usage || {}
-    var uUrl = apiTextInput(u.url || '', '可选：第二段用量接口（如 OpenAI 兼容 /usage）')
-    var uUse = apiTextInput((u.json && u.json.used) || '', '用量字段，如 total_usage')
-    var uSca = apiTextInput((u.json && u.json.scale) == null ? '' : u.json.scale, '乘数，如 0.01')
-    var uUrlRow = apiPanelRow('用量接口', uUrl)
-    var uUseRow = apiPanelRow('用量字段', uUse)
-    var uScaRow = apiPanelRow('用量乘数', uSca)
-    card.appendChild(uUrlRow)
-    card.appendChild(uUseRow)
-    card.appendChild(uScaRow)
-    var matchInp = apiTextInput((m && Array.isArray(m.matchIds) ? m.matchIds.join(',') : ''), '会话事件里的模型名关键字，逗号分隔')
-    var matchRow = apiPanelRow('事件匹配', matchInp)
-    card.appendChild(matchRow)
-    var tip = document.createElement('div')
-    tip.className = 'dshwv-bubhint'
-    tip.textContent = '「事件匹配」用于没有余额差的模型：本机每轮对话的真实 token 花费，按这里的关键字归到本模型。'
-    card.appendChild(tip)
-    // —— 自定义单价（可选，元/百万 token）：给「没有余额接口/余额差」的模型按真实 token 换算金额 ——
-    // v721:按用户要求，这块并入下方「接口与字段（高级）」折叠区（不再单独常显）。
-    // 注意：高级区默认收起 → 子菜单里那行只读「单价」的提示负责告诉用户去哪填。
-    var prc = (m && m.price) || {}
-    var pHit = apiTextInput(prc.hit == null ? '' : prc.hit, '例: 0.02')
-    var pMiss = apiTextInput(prc.miss == null ? '' : prc.miss, '例: 1.0')
-    var pOut = apiTextInput(prc.out == null ? '' : prc.out, '例: 4.0')
-    var pCur = apiSelectEl([['CNY', '人民币（元 / CNY）'], ['USD', '美元（$ / USD）']], String(prc.cur || 'CNY').toUpperCase() === 'USD' ? 'USD' : 'CNY')
-    var pRate = apiTextInput(prc.rate == null ? '' : prc.rate, '仅美元时需要：汇率（元/USD），例 7.1')
-    card.appendChild(apiSec('单价（可选）'))
-    card.appendChild(apiPanelRow('缓存命中', pHit))
-    card.appendChild(apiPanelRow('未命中输入', pMiss))
-    card.appendChild(apiPanelRow('输出', pOut))
-    card.appendChild(apiPanelRow('币种', pCur))
-    card.appendChild(apiPanelRow('汇率', pRate))
-    var pTip = document.createElement('div')
-    pTip.className = 'dshwv-bubhint'
-    pTip.style.margin = '0 0 6px'
-    pTip.textContent = '单位为「币种 / 百万 token」，留空则沿用内置价目表。币种选美元时请填汇率，记账会换算成人民币（账本统一按 CNY 结算）；自定义单价不分峰谷。'
-    card.appendChild(pTip)
+    // 没配置密钥时不显示「删除密钥」（点了也没意义）
+    if (m && m.hasKey) card.appendChild(apiPanelRow('', delKey))
+    var keyRefInp = { value: 'API3D_API_KEY' }
     // 按钮
     var btns = document.createElement('div')
     btns.className = 'dshwv-bubbtns'
     function collect() {
-      var json = {
-        remaining: (jRem.value || '').trim(),
-        total: (jTot.value || '').trim(),
-        used: (jUse.value || '').trim(),
-        scale: isFinite(Number(jSca.value)) && String(jSca.value).trim() !== '' ? Number(jSca.value) : undefined,
-      }
-      var body = {
-        action: 'save',
-        model: {
-          id: isNew ? undefined : m.id,
-          name: (nameInp.value || '').trim(),
-          provider: tplSel.value,
-          currency: curSel.value,
-          keyRef: (keyRefInp.value || '').trim(),
-          baseUrl: (baseInp.value || '').trim(),
-          balance: {
-            url: (balUrl.value || '').trim(),
-            auth: (authInp.value || '').trim(),
-            // v789：显式带上方法/请求体（GET + 空体 = 老行为；宿主侧空值不覆盖模板）
-            method: (balMethod.value || 'GET').toUpperCase(),
-            body: (balBody.value || '').trim(),
-            json: json,
-          },
-          // v789（issue #189）：显式 true/false（不是"仅 true 才传"）—— 用户要能**取消**勾选
-          allowCustomHost: !!allowHost.checked,
-          params: (function () {
-            var o = {}
-            String(prmInp.value || '').split(',').forEach(function (kv) {
-              var i = kv.indexOf('=')
-              if (i <= 0) return
-              var k = kv.slice(0, i).trim()
-              var v = kv.slice(i + 1).trim()
-              if (/^[A-Za-z_][A-Za-z0-9_]{0,30}$/.test(k)) o[k] = v
-            })
-            return o
-          })(),
-          matchIds: (matchInp.value || '').split(',').map(function (s) { return s.trim() }).filter(function (s) { return s.length > 0 }),
-          price: { hit: (pHit.value || '').trim(), miss: (pMiss.value || '').trim(), out: (pOut.value || '').trim(), cur: pCur.value, rate: (pRate.value || '').trim() },
-        },
-      }
-      var uu = (uUrl.value || '').trim()
-      if (uu) {
-        body.model.balance.usage = {
-          url: uu,
-          json: {
-            used: (uUse.value || '').trim(),
-            scale: isFinite(Number(uSca.value)) && String(uSca.value).trim() !== '' ? Number(uSca.value) : undefined,
-          },
-        }
-      }
+      // fork（API3D 专属）：站点地址 / 接口 / 字段 / 币种全部由宿主按模板写入 ——
+      //   界面只提交 API Key。少一个可改字段，就少一类「配错了导致余额读不出来」的问题。
+      var body = { action: 'save', model: { id: isNew ? undefined : m.id } }
       var kv = keyInp.value || ''
       if (kv) body.keyValue = kv
       return body
     }
-    if (!isNew) {
+    if (!isNew && !needKey) {
       var testBtn = apiBtn('测试连通性', 'dshwv-bubbtn dshwv-bubbtn-no', function () {
         testBtn.disabled = true
         testBtn.textContent = '测试中…'
@@ -5147,19 +5033,18 @@ function openApiModelPanel(modelId) {
     }
     btns.appendChild(apiBtn('保存', 'dshwv-bubbtn dshwv-bubbtn-ok', function () {
       status.textContent = '保存中…'
-      var nm = (nameInp.value || '').trim()
       postApiModels(collect(), function (d) {
         if (!d || !d.ok) { status.textContent = '保存失败: ' + ((d && d.error) || '未知错误'); return }
         // 新建模型：保存后给一个明确的收尾——弹「保存成功」，点确认即关掉本面板。
         // （原先是重新打开为编辑态，新建流程会停在一个没有明显关闭入口的面板上）
         if (isNew) {
-          // v744 清理：这里原先有 `confirmMask.style.zIndex = '29500' !important`，但紧接着的
-          // showConfirm() 会把确认框统一提到 40000 !important，所以那行是**无效设置**（立刻被覆盖），
-          // 只会让"层级"更难读。已删除 —— 确认框永远由 showConfirm 统一抬到 40000。
-          showConfirm('✓ 保存成功：' + (nm || '新模型') + '\n已加入模型列表', function () {
+          showConfirm(needKey ? '\u2713 已保存：API3D 余额会显示在右下角' : '\u2713 保存成功：API3D 站点配置已保存', function () {
             try { closeApiModelPanel() } catch (err) {}
-            // 背后的「- = 小鲸鱼记账 = -」列表同步刷新（模型行在静态区，需重建子界面）
+            // 背后的「- = API3D 记账 = -」列表同步刷新（模型行在静态区，需重建子界面）
             refreshModelList()
+            // fork（API3D 专属）：引导配置完 key 就立刻重取一次余额，
+            // 否则要等下一次 60s 轮询 —— 引导卡写着"保存后立刻出数"，这里让它成真。
+            try { refresh(true) } catch (err) {}
           }, '确认')
           return
         }
@@ -5167,18 +5052,9 @@ function openApiModelPanel(modelId) {
         refreshModelList()
       })
     }))
-    if (!isNew) {
-      btns.appendChild(apiBtn('删除模型', 'dshwv-bubbtn dshwv-bubbtn-no', function () {
-        showConfirm('删除模型「' + (m.name || m.id) + '」？\n该模型的提醒/预算与所有泡泡里引用它的模块会一并移除。', function () {
-          postApiModels({ action: 'delete', id: m.id }, function (d) {
-            closeApiModelPanel()
-            refreshModelList()
-            if (d && d.removedModules) { try { showConfirm('已同时移除 ' + d.removedModules + ' 个引用该模型的泡泡模块', function () {}, '知道了') } catch (err) {} }
-          })
-        })
-      }))
-    }
-    btns.appendChild(apiBtn('取消', 'dshwv-bubbtn dshwv-bubbtn-no', closeApiModelPanel))
+    // fork（API3D 专属）：引导遮罩不能「取消」—— 它挡住的正是要用余额的菜单；
+    // 普通面板（已配好 key，只是来改配置）才有「取消」。
+    if (!forceFirstRun) btns.appendChild(apiBtn('取消', 'dshwv-bubbtn dshwv-bubbtn-no', closeApiModelPanel))
     card.appendChild(btns)
     // —— 布局整理（v663）——
     // 1) 按钮行固定在卡片最下方（卡片自身滚动，按钮 sticky）
@@ -5202,128 +5078,31 @@ function openApiModelPanel(modelId) {
       btns.style.borderTop = '1px solid rgba(32,49,112,.12)'
       btns.style.zIndex = '2'
     } catch (err) {}
-    // 2)「删除密钥」移到密钥输入框右侧，并移除原来的独立行
+    // 2)「删除密钥」移到密钥输入框右侧，并移除原来的独立行（没有密钥时整个按钮都不创建）
     try {
-      keyInp.parentNode.appendChild(delKey)
+      if (m && m.hasKey) keyInp.parentNode.appendChild(delKey)
       keyInp.style.flex = '1'
       keyInp.style.minWidth = '0'
       if (delKeyRow && delKeyRow.parentNode) delKeyRow.parentNode.removeChild(delKeyRow)
     } catch (err) {}
-    // 3) 不重要的接口/字段内容默认收起（从「余额接口」行到按钮行之间的全部内容）
-    try {
-      var advBox = document.createElement('div')
-      // 展开/收起过渡：max-height + 透明度（收起态 max-height:0；展开后放开限制避免截断）
-      advBox.style.overflow = 'hidden'
-      advBox.style.maxHeight = '0px'
-      advBox.style.opacity = '0'
-      advBox.style.transition = 'max-height .24s ease, opacity .18s ease'
-      // v718 关键修复：卡片是 flex 列容器，而本框 overflow:hidden → 它的自动最小高度为 0。
-      // 内容比可视区高时，flex 会把它"压扁"并把内容裁掉（卡片不溢出 → 不出现滚动条），
-      // 表现就是「展开后下面的字段（单价/接口等）看不见也点不到」。禁止收缩 → 卡片自身出滚动条。
-      advBox.style.flexShrink = '0'
-      advBox.setAttribute('data-open', '0')
-      var toMove = []
-      var started = false
-      var kidsA = Array.prototype.slice.call(card.children)
-      for (var ai = 0; ai < kidsA.length; ai++) {
-        var elA = kidsA[ai]
-        if (elA === balUrlRow) started = true
-        if (elA === btns) break
-        if (started) toMove.push(elA)
-      }
-      var advToggle = apiBtn('接口与字段（高级）▾', 'dshwv-usage-more', function () {
-        var open = advBox.getAttribute('data-open') === '1'
-        if (!open) {
-          advBox.setAttribute('data-open', '1')
-          advBox.style.maxHeight = advBox.scrollHeight + 'px'
-          advBox.style.opacity = '1'
-          advToggle.textContent = '接口与字段（高级）▴'
-          setTimeout(function () {
-            if (advBox.getAttribute('data-open') === '1') advBox.style.maxHeight = 'none'
-          }, 280)
-        } else {
-          advBox.setAttribute('data-open', '0')
-          advBox.style.maxHeight = advBox.scrollHeight + 'px'
-          void advBox.offsetHeight // 先固定当前高度再收到 0，否则过渡不生效
-          advBox.style.maxHeight = '0px'
-          advBox.style.opacity = '0'
-          advToggle.textContent = '接口与字段（高级）▾'
-        }
-      })
-      advToggle.style.width = '100%'
-      advToggle.style.margin = '2px 0 6px'
-      card.insertBefore(advToggle, balUrlRow)
-      card.insertBefore(advBox, balUrlRow)
-      for (var mi = 0; mi < toMove.length; mi++) advBox.appendChild(toMove[mi])
-      // v721:单价区块不再单独移出 —— 它随 toMove 一起进「高级」折叠区（按 DOM 顺序排在最后）
-      // 通用兜底：卡片所有直接子项都禁止收缩（收缩=被压扁/裁切；我们要的是卡片滚动）
-      for (var ci = 0; ci < card.children.length; ci++) {
-        try { card.children[ci].style.flexShrink = '0' } catch (err) {}
-      }
-    } catch (err) {}
     mask.appendChild(card)
-    mask.addEventListener('click', function (e) { if (e.target === mask) closeApiModelPanel() })
+    // 普通面板：点遮罩空白处可以关掉。引导遮罩（forceFirstRun）不响应 —— 必须先把 key 填上。
+    if (!forceFirstRun) mask.addEventListener('click', function (e) { if (e.target === mask) closeApiModelPanel() })
     dshwBodyAppend(mask)
     apiModelMaskEl = mask
-    // 模板切换：把模板默认值填进各字段（仅新增态）
-    if (isNew) {
-      function applyTpl() {
-        var t = null
-        for (var k = 0; k < apiTemplates.length; k++) if (apiTemplates[k].id === tplSel.value) t = apiTemplates[k]
-        if (!t) return
-        // ① 基本项：凭据名始终跟随所选模板（避免沿用上一次的值把密钥写进错误的 ref）+ 币种
-        keyRefInp.value = t.keyRef || ''
-        curSel.value = t.currency || 'CNY'
-        // ② Base URL：中转站 / 自定义 / 本地模型需要
-        baseRow.style.display = t.needsBaseUrl ? '' : 'none'
-        // ③ 接口与字段：模板带什么就回填什么（v724，B 方案核心）。Codex 模式不需要这些行。
-        var isCodexT = t.kind === 'codex'
-        var tb = t.balance || {}
-        var tj = tb.json || {}
-        var tu = tb.usage || {}
-        balUrl.value = tb.url || ''
-        authInp.value = tb.auth == null ? 'Bearer {key}' : tb.auth
-        jRem.value = tj.remaining || ''
-        jTot.value = tj.total || ''
-        jUse.value = tj.used || ''
-        jSca.value = tj.scale == null ? '' : String(tj.scale)
-        uUrl.value = tu.url || ''
-        uUse.value = (tu.json && tu.json.used) || ''
-        uSca.value = (tu.json && tu.json.scale) == null ? '' : String(tu.json.scale)
-        var ifaceRows = [balUrlRow, authRow, jRemRow, jTotRow, jUseRow, jScaRow, uUrlRow, uUseRow, uScaRow]
-        for (var ri = 0; ri < ifaceRows.length; ri++) ifaceRows[ri].style.display = isCodexT ? 'none' : ''
-        // ④ 事件匹配：模板给的默认关键字（切换模板即重填，之后可自行改）
-        if (Array.isArray(t.matchIds) && t.matchIds.length) matchInp.value = t.matchIds.join(', ')
-        // ⑤ 口径说明：优先用模板自己的说明（含「官方无余额接口」这类），常显在模板选择下方
-        var hasBal = !!String(tb.url || '').trim()
-        tplNote.textContent = t.apiNote ? ('ℹ ' + t.apiNote) : ''
-        tip.textContent = hasBal
-          ? '「事件匹配」用于没有余额差的模型：本机每轮对话的真实 token 花费，按这里的关键字归到本模型。'
-          : '该厂商没有「用 API key 查余额」的接口 → 余额显示「—」，今日已用按会话事件估算（本机每轮对话的真实 token）。'
-        // ⑥ 余额接口行保持可见（即使模板没有默认地址）：用户可以自己填
-        balUrlRow.style.display = isCodexT ? 'none' : ''
-      }
-      tplSel.addEventListener('change', applyTpl)
-      applyTpl()
-    } else {
-      var needBase = false
-      for (var tk = 0; tk < apiTemplates.length; tk++) if (apiTemplates[tk].id === m.provider && apiTemplates[tk].needsBaseUrl) needBase = true
-      baseRow.style.display = needBase ? '' : 'none'
+    if (forceFirstRun) {
+      // 不给可见的"跳过"入口，但保留一个隐形逃生口：Esc（避免 key 一直填不对被锁在菜单外）
+      try {
+        apiFirstRunOpen = true
+        document.addEventListener('keydown', apiFirstRunEsc, true)
+      } catch (err) {}
     }
   } catch (err) {}
 }
 var apiModelMaskEl = null
-// v748：Codex 模型的设置菜单打开时，记下"当前是哪个模型"和"用量行元素"，
-// 这样拨动「Codex 本机统计」开关、等宿主确认后可以**原地**刷新那一行，不必关窗重开。
-var apiModelMenuId = null
-var codexUsageTextEl = null
-function refreshOpenCodexRow() {
-  try {
-    if (!codexUsageTextEl || !apiModelMenuId) return
-    var t = apiCodexDetailText(apiModelMenuId)
-    codexUsageTextEl.textContent = t
-    codexUsageTextEl.title = t
-  } catch (err) {}
+var apiFirstRunOpen = false
+function apiFirstRunEsc(e) {
+  try { if (e && (e.key === 'Escape' || e.keyCode === 27)) closeApiModelPanel() } catch (err) {}
 }
 function closeApiModelPanel() {
   // v744：必须走 dshwBodyDetach —— 这个遮罩是登记在案的 body 节点，
@@ -5331,8 +5110,10 @@ function closeApiModelPanel() {
   // 表现就是**点「取消」关不掉这个窗口**（0.3.7 引入的回归）。
   try { if (apiModelMaskEl) dshwBodyDetach(apiModelMaskEl) } catch (err) {}
   apiModelMaskEl = null
-  apiModelMenuId = null
-  codexUsageTextEl = null
+  if (apiFirstRunOpen) {
+    apiFirstRunOpen = false
+    try { document.removeEventListener('keydown', apiFirstRunEsc, true) } catch (err) {}
+  }
 }
 // 列宽受限 + 悬浮滚动：内容超出列宽时，鼠标移上去文字自动横向滚动，移开回到起点。
 // 需要 .dshwv-marq（外层 overflow:hidden）+ 内层 inline-block span 配合。
@@ -5400,7 +5181,7 @@ function buildUsageSettingsArea() {
   // 不统一会让标题行与第一个模型之间多出 5px。这里与模型行保持一致。
   secRow.style.margin = '5px 0'
   var secLb = document.createElement('span')
-  secLb.textContent = '模型（提醒 / 预算 / 额度）'
+  secLb.textContent = 'API3D 站点'
   secLb.style.flex = '0 0 auto'
   secRow.appendChild(secLb)
   // 手动刷新：强制重新拉取各模型余额/额度/今日已用，然后重建整个子界面（含本静态区）
@@ -5436,6 +5217,26 @@ function buildUsageSettingsArea() {
     try { loadApiModels(onDone, true) } catch (err) { onDone() }
   })
   secRow.appendChild(secBtn)
+  // fork（API3D 专属）：站点那一行（余额 / 今日已用 / 分组）**不再显示** —— 这三个数字在主气泡、
+  //   站点设置面板、「关于 / 自检」里都有，列表里再来一遍就是重复且占地方。
+  //   只保留「提醒 / 预算 / 额度」的入口，否则那些编辑器（openApiModelMenu）就没有地方能打开了。
+  var secSetBtn = document.createElement('button')
+  secSetBtn.type = 'button'
+  secSetBtn.className = 'dshwv-palchip'
+  secSetBtn.textContent = '提醒 / 预算'
+  secSetBtn.title = '站点的余额预警 / 今日预算 / 额度（手填）'
+  secSetBtn.addEventListener('click', function (e) {
+    e.stopPropagation()
+    function openSiteMenu() {
+      var sm = null
+      for (var si = 0; si < apiModels.length; si++) if (!apiModels[si].builtin) { sm = apiModels[si]; break }
+      if (sm) openApiModelMenu(sm.id)
+      else try { openApiModelPanel(null) } catch (err2) {}
+    }
+    if (apiModelsLoaded) openSiteMenu()
+    else loadApiModels(openSiteMenu)
+  })
+  secRow.appendChild(secSetBtn)
   usagePanel.appendChild(secRow)
   if (!apiModelsLoaded) {
     var ld = document.createElement('div')
@@ -5458,42 +5259,16 @@ function buildUsageSettingsArea() {
       loadApiModels(function () { try { refreshUsageMain() } catch (err) {} })
     }
   }
-  apiModels.forEach(function (am) {
-    var r = document.createElement('div')
-    r.className = 'dshwv-audiorow'
-    r.style.margin = '5px 0' // 与主菜单行距(.dshwv-menu-row 5px)一致
-    // 名称列：固定宽度（70px），超出部分靠悬浮滚动查看
-    var n = mkScrollCell(am.builtin ? (am.name + '（内置）') : am.name, 'dshwv-usage-model', { flex: '0 0 70px', boxSizing: 'border-box' })
-    n.title = am.id + (am.keyRef ? ' · ' + am.keyRef : '')
-    r.appendChild(n)
-    // 内容列：占满剩余宽度，超出同样悬浮滚动
-    var qOn = !!(am.quota && am.quota.on)
-    var planOn = !!(am.planSupport && am.plan && am.plan.ok)
-    var infoTxt = ''
-    if (am.error) infoTxt = '⚠ ' + am.error
-    else if (am.codex && am.codex.ok) infoTxt = apiCodexRowText(am)
-    else if (planOn) infoTxt = '厂商额度 ' + apiPlanSummary(am.id)
-    else if (qOn) infoTxt = '额度 ' + apiQuotaSummary(am.id)
-    else if (am.balanceMode === 'events') infoTxt = '余额 —（无接口·按事件）· 今日 ' + apiFmtMoney(am.todayUsage, apiTodayCur(am))
-    else infoTxt = apiFmtMoney(am.balance, am.currency) + ' · 今日 ' + apiFmtMoney(am.todayUsage, apiTodayCur(am))
-    var info = mkScrollCell(infoTxt, 'dshwv-usage-hint', { flex: '1 1 auto', minWidth: '0', textAlign: 'right', paddingRight: '6px' })
-    info.title = infoTxt
-    r.appendChild(info)
-    var btn = document.createElement('button')
-    btn.type = 'button'
-    btn.className = 'dshwv-roleimport'
-    btn.textContent = '设置'
-    btn.title = '该模型的提醒 / 预算 / 密钥与接口'
-    btn.addEventListener('click', function (e) { e.stopPropagation(); openApiModelMenu(am.id) })
-    r.appendChild(btn)
-    usagePanel.appendChild(r)
-  })
   var addRow = document.createElement('div')
   addRow.className = 'dshwv-menu-row' // 与主菜单「资源管理」行同款
   addRow.style.margin = '5px 0'
-  var addModelBtn = apiBtn('+ 添加模型（自定义 API）', 'dshwv-usage-more', function () {
-    // 确保厂商模板已就绪再打开表单（否则模板下拉会是空的）
-    if (apiTemplates.length) openApiModelPanel(null)
+  // fork（API3D 专属）：不再提供「添加模型（自定义 API）」——渠道固定为 API3D，
+  //   这里只保留一个入口，直接打开站点设置（已配置过的模型会带出现有值）。
+  var addModelBtn = apiBtn(apiModels.length ? 'API3D 站点设置' : '配置 API3D 站点', 'dshwv-usage-more', function () {
+    var exist = null
+    for (var ei = 0; ei < apiModels.length; ei++) if (!apiModels[ei].builtin) { exist = apiModels[ei]; break }
+    if (exist) openApiModelPanel(exist.id)
+    else if (apiTemplates.length) openApiModelPanel(null)
     else loadApiModels(function () { openApiModelPanel(null) })
   })
   addModelBtn.style.flex = '1'
@@ -5546,10 +5321,10 @@ function openModelQuotaEditor(modelId) {
     function buildModeSel() {
       var money = unitSel.value === 'money'
       // 金额单位：只给「手动填写」；已存在的 money+auto 数据在这里会显示为手动（used 值不会被清掉）
-      var cur = money ? 'manual' : ((q.mode === 'manual' || q.mode === 'codex') ? q.mode : 'auto')
+      var cur = money ? 'manual' : (q.mode === 'manual' ? 'manual' : 'auto')
       var opts = money
         ? [['manual', '手动填写']]
-        : [['auto', '自动统计（按会话 token，推荐）'], ['codex', 'Codex 本地会话 token'], ['manual', '手动填写']]
+        : [['auto', '自动统计（按会话 token，推荐）'], ['manual', '手动填写']]
       return apiSelectEl(opts, cur)
     }
     modeSel = buildModeSel()
@@ -5601,7 +5376,7 @@ function openModelQuotaEditor(modelId) {
     btns.appendChild(apiBtn('保存', 'dshwv-bubbtn dshwv-bubbtn-ok', function () {
       var next = {
         on: !!onInp.checked,
-        mode: (modeSel.value === 'manual' || modeSel.value === 'codex') ? modeSel.value : 'auto',
+        mode: modeSel.value === 'manual' ? 'manual' : 'auto',
         total: Number(totalInp.value) || 0,
         unit: unitSel.value === 'money' ? 'money' : 'tokens',
         used: Math.max(0, Number(usedInp.value) || 0),
@@ -5695,48 +5470,6 @@ function openApiModelMenu(modelId) {
     }, function () { openModelAlertBudget(modelId, 'budget', function () { openApiModelMenu(modelId) }) })
     rowOf('额度（订阅/资源包）', function () { return apiQuotaSummary(modelId) },
       function () { openModelQuotaEditor(modelId) })
-    // Codex 模式：开关（v748 从主菜单挪到这里）+ 只读展示本地会话统计（机器级）
-    // 注意：开关按「是不是 Codex 模型」（apiCodexOf 非空）显示，**不能**按 .ok 判断 ——
-    // 关掉时 .ok 就是 false，那样开关会自己消失、再也没法打开。
-    if (apiCodexOf(modelId)) {
-      var ct = document.createElement('div')
-      ct.className = 'dshwv-audiorow'
-      var ctl = document.createElement('span')
-      ctl.textContent = 'Codex 本机统计'
-      ctl.style.flex = '0 0 auto'
-      ct.appendChild(ctl)
-      var cth = document.createElement('span')
-      cth.className = 'dshwv-usage-hint'
-      cth.style.flex = '1'
-      cth.style.textAlign = 'right'
-      cth.style.paddingRight = '6px'
-      cth.textContent = '读取 ~/.codex/sessions'
-      ct.appendChild(cth)
-      ct.appendChild(codexStatsCheckbox())
-      card.appendChild(ct)
-      // 用量行：关闭/出错时同样显示（文字就是原因），开着时显示今日/近7天/累计
-      var cr = document.createElement('div')
-      cr.className = 'dshwv-audiorow'
-      var cl = document.createElement('span')
-      cl.textContent = 'Codex 用量'
-      cl.style.flex = '0 0 auto'
-      cr.appendChild(cl)
-      var ci = document.createElement('span')
-      ci.className = 'dshwv-usage-hint'
-      ci.style.flex = '1'
-      ci.style.textAlign = 'right'
-      ci.style.paddingRight = '6px'
-      ci.style.whiteSpace = 'nowrap'
-      ci.style.overflow = 'hidden'
-      ci.style.textOverflow = 'ellipsis'
-      ci.textContent = apiCodexDetailText(modelId)
-      ci.title = ci.textContent
-      cr.appendChild(ci)
-      card.appendChild(cr)
-      // 记下来：开关切完拿到服务端确认后，原地刷新这一行（不用关窗重开）
-      codexUsageTextEl = ci
-      apiModelMenuId = modelId
-    }
     // 厂商订阅额度（kind='quota'）：只读展示，来自厂商接口
     if (apiPlanSupport(modelId)) {
       var pr = document.createElement('div')
@@ -6154,7 +5887,7 @@ function fillUsagePanel(d) {
   var todayModels = today.models || []
   var hasEvToday = todayModels.length > 0
   // ① 本机模型费用（所有模型的本地会话估算）
-  // 「已观测消费」是 DeepSeek 账户口径（余额观测），已移到 小鲸鱼记账 → DeepSeek（内置）→ 设置 里，
+  // 「已观测消费」是 DeepSeek 账户口径（余额观测），已移到 API3D 记账 → DeepSeek（内置）→ 设置 里，
   // 与「余额校正」放在一起，避免在这里被误读成"全模型合计"。
   var modelTitle = uSectionTitle('本机模型费用', usageMoney(today.modelTotal, 'CNY'))
   // 标题与下方模型列表之间不再画分隔线（列表本身有边框，够了）
@@ -6703,7 +6436,7 @@ function usageRemindDefaultLines(isAlert) {
       { type: 'text', text: '¥{below}', size: 5, bold: true, rgb: 'rouge', color: '', bgRgb: '', bg: '', row: 2 },
       { type: 'text', text: '啦~', size: 5, bold: true, row: 2 },
       { type: 'image', imgId: 'bimg_money1', size: 6, imgScale: 0.4 },
-      { type: 'link', text: '>> 喂 点 米 <<', url: 'https://platform.deepseek.com/top_up', size: 1, color: '#ffffff', rgb: '', bgRgb: 'indigo', bg: '', bold: true, ul: false },
+      { type: 'link', text: '>> 喂 点 米 <<', url: 'https://api3d.cn', size: 1, color: '#ffffff', rgb: '', bgRgb: 'indigo', bg: '', bold: true, ul: false },
     ]
   }
   return [
@@ -7968,7 +7701,7 @@ function bubbleDefaultFirstModules() {
   return [
     {
       type: "text",
-      text: "DeepSeek 余额",
+      text: "API3D 余额",
       size: 8,
       bold: true,
       rgb: "",
@@ -8458,7 +8191,7 @@ var BUBBLE_DEFAULT_ITEMS = [
         "modules":  [
                         {
                             "type":  "text",
-                            "text":  "DeepSeek 余额",
+                            "text":  "API3D 余额",
                             "size":  8,
                             "bold":  true,
                             "rgb":  "",
@@ -13844,7 +13577,7 @@ var textBox = document.createElement('div')
 textBox.className = 'dshwv-text'
 var labelEl = document.createElement('div')
 labelEl.className = 'dshwv-label'
-labelEl.textContent = 'DeepSeek 余额'
+labelEl.textContent = 'API3D 余额'
 var amountEl = document.createElement('div')
 amountEl.className = 'dshwv-amount'
 var hintEl = document.createElement('div')
@@ -14261,7 +13994,7 @@ function restoreBubbleLines() {
   // 后续 setHint 首次直写分支不碰 opacity → 今日已用整行透明消失。
   labelEl.style.display = ''
   labelEl.className = 'dshwv-label'
-  labelEl.textContent = 'DeepSeek 余额'
+  labelEl.textContent = 'API3D 余额'
   labelEl.style.color = ''
   labelEl.style.opacity = ''
   amountEl.style.display = ''
@@ -17478,8 +17211,8 @@ function apiQuotaInfo(modelId) {
   var q = apiQuotaOf(modelId)
   if (!q) return null
   var total = Number(q.total) || 0
-  // 自动模式：已用由 host 按会话 token 统计（q.autoUsed）；Codex 模式：按 Codex 本地会话 token；手动模式：面板里填的 q.used
-  var isAuto = (q.mode === 'codex') || ((q.mode !== 'manual') && (q.mode === 'auto' || q.autoUsed !== undefined))
+  // 自动模式：已用由 host 按会话 token 统计（q.autoUsed）；手动模式：面板里填的 q.used
+  var isAuto = (q.mode !== 'manual') && (q.mode === 'auto' || q.autoUsed !== undefined)
   var used = isAuto ? Math.max(0, Number(q.autoUsed) || 0) : Math.max(0, Number(q.used) || 0)
   if (!total && !used) return null
   var left = Math.max(0, total - used)
@@ -17488,7 +17221,7 @@ function apiQuotaInfo(modelId) {
     pct: total > 0 ? Math.min(100, used / total * 100) : 0,
     unit: q.unit === 'money' ? 'money' : 'tokens',
     reset: q.reset || 'none',
-    mode: q.mode === 'codex' ? 'codex' : (isAuto ? 'auto' : 'manual'),
+    mode: isAuto ? 'auto' : 'manual',
   }
 }
 function apiFmtQuotaNum(n) {
@@ -17538,79 +17271,7 @@ function apiQuotaSummary(modelId) {
   if (!q || !q.on) return '已关闭'
   var i = apiQuotaInfo(modelId)
   if (!i) return '已开启（未填总量）'
-  return (i.mode === 'codex' ? 'Codex · ' : (i.mode === 'auto' ? '自动 · ' : '手动 · ')) + '已用 ' + apiQuotaPctText(modelId) + ' · 剩 ' + apiFmtQuotaNum(i.left) + apiQuotaUnitSuffix(i)
-}
-// —— Codex 模式：本地会话统计（host 读 ~/.codex/sessions 得到，机器级数据）——
-function apiCodexOf(modelId) {
-  var m = apiModelById(modelId)
-  return (m && m.codex) || null
-}
-function apiFmtTokens(n) {
-  n = Number(n) || 0
-  if (n >= 100000000) return (n / 100000000).toFixed(2).replace(/\.?0+$/, '') + '亿'
-  if (n >= 10000) return (n / 10000).toFixed(n >= 1000000 ? 0 : 1).replace(/\.0$/, '') + '万'
-  return String(Math.round(n))
-}
-function apiCodexDays7(c) {
-  var s = 0
-  if (c && Array.isArray(c.days7)) for (var i = 0; i < c.days7.length; i++) s += Number(c.days7[i].tokens) || 0
-  return s
-}
-// 列表行摘要
-function apiCodexRowText(am) {
-  var c = am && am.codex
-  if (!c || !c.ok) {
-    // issue #116：把「被关掉 / 找不到目录 / 出错」区分开，不再是一句笼统的失败
-    if (c && c.disabled) return 'Codex 统计已关闭'
-    return c && c.error ? ('⚠ ' + c.error) : '无 Codex 数据'
-  }
-  var txt = 'Codex 今日 ' + apiFmtTokens(c.todayTokens) + ' · 近7天 ' + apiFmtTokens(apiCodexDays7(c)) + ' tokens'
-  // 护栏的实际情况要能看见（issue #116：原报告抱怨"无开关、无报错、无提示"）
-  var notes = []
-  if (Number(c.skipped) > 0) notes.push('已跳过 ' + c.skipped + ' 个超大日志')
-  if (Number(c.deferred) > 0) notes.push('统计更新中')
-  if (notes.length) txt += '（' + notes.join(' · ') + '）'
-  return txt
-}
-// 第二期：订阅窗口（5h / 周）。host 已把 rate_limits 归一成 { primary, secondary, planType }
-function apiCodexWinLabel(w, idx) {
-  if (w && w.windowMinutes) {
-    if (w.windowMinutes >= 1440) return Math.round(w.windowMinutes / 1440) + '天窗口'
-    if (w.windowMinutes >= 60) return Math.round(w.windowMinutes / 60) + 'h'
-    return w.windowMinutes + '分钟'
-  }
-  return idx === 0 ? '5h' : '周'
-}
-function apiCodexWindowReset(w) {
-  if (!w || !w.resetAt) return ''
-  var left = Number(w.resetAt) - Date.now()
-  if (!isFinite(left)) return ''
-  if (left <= 0) return '即将重置'
-  var h = Math.floor(left / 3600000)
-  var d = Math.floor(h / 24)
-  if (d > 0) return d + '天' + (h % 24) + '小时后重置'
-  return h + '小时' + Math.floor((left % 3600000) / 60000) + '分后重置'
-}
-function apiCodexWindowsText(c) {
-  var w = c && c.windows
-  if (!w) return ''
-  var pct = function (v) { return (v === null || v === undefined) ? '--' : ((Number(v) || 0).toFixed(1).replace(/\.0$/, '') + '%') }
-  var parts = []
-  if (w.primary) parts.push(apiCodexWinLabel(w.primary, 0) + ' 已用 ' + pct(w.primary.usedPct) + (apiCodexWindowReset(w.primary) ? ' · ' + apiCodexWindowReset(w.primary) : ''))
-  if (w.secondary) parts.push(apiCodexWinLabel(w.secondary, 1) + ' 已用 ' + pct(w.secondary.usedPct) + (apiCodexWindowReset(w.secondary) ? ' · ' + apiCodexWindowReset(w.secondary) : ''))
-  if (w.planType) parts.push(w.planType)
-  return parts.join(' | ')
-}
-// 详细摘要（子菜单只读行 / 编辑器提示）
-function apiCodexDetailText(modelId) {
-  var c = apiCodexOf(modelId)
-  if (!c || !c.ok) return c && c.error ? c.error : '无 Codex 数据'
-  var s = '今日 ' + apiFmtTokens(c.todayTokens) + ' · 本月 ' + apiFmtTokens(c.monthTokens) +
-    ' · 累计 ' + apiFmtTokens(c.totalTokens) + ' · 近7天 ' + apiFmtTokens(apiCodexDays7(c)) +
-    '（' + (c.sessions || 0) + ' 个会话文件）'
-  var w = apiCodexWindowsText(c)
-  if (w) s += ' · ' + w
-  return s
+  return (i.mode === 'auto' ? '自动 · ' : '手动 · ') + '已用 ' + apiQuotaPctText(modelId) + ' · 剩 ' + apiFmtQuotaNum(i.left) + apiQuotaUnitSuffix(i)
 }
 // —— 厂商订阅额度（kind='quota'：智谱 / Kimi Coding / MiniMax Coding 等，由 host 归一化下发）——
 function apiPlanOf(modelId) {
@@ -19026,7 +18687,16 @@ function rightGap() {
 }
 function fmt(balance, currency) {
   var num = Number(balance)
-  var fixed = isFinite(num) ? num.toFixed(2) : '--'
+  var fixed
+  if (!isFinite(num)) fixed = '--'
+  else {
+    // fork（API3D 专属）：站点单据常是「一次调用几厘钱」，两位小数只会显示 0.00 ⇒ 小额多给几位
+    var a = Math.abs(num)
+    if (num === 0) fixed = '0.00'
+    else if (a < 0.01) fixed = num.toFixed(6).replace(/0+$/, '').replace(/\.$/, '')
+    else if (a < 1) fixed = num.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')
+    else fixed = num.toFixed(2)
+  }
   return currency === 'CNY' ? '¥ ' + fixed : fixed + ' ' + currency
 }
 function animateAmount(from, to, currency, duration) {
@@ -19255,6 +18925,7 @@ function refresh(manual) {
         state.usageLabel = data.usageLabel || '本地估算'
         if (data.stale) state.usageLabel += ' · 余额未刷新'
         state.isPeak = !!data.isPeak
+        // fork（站点专属）：没有官方回退 —— balanceSourceFallback 只会跟 ok:false 一起来（见下面的失败分支）。
   // v790（用户要求）：菜单底部那行版本小字（宿主下发 versionLabel；老宿主没有就退回 version）
   // v794：宿主现在**成功失败都带** versionLabel ⇒ 余额失败也不会让版号空着
   setVersionLabel(data.versionLabel || data.version)
@@ -19290,8 +18961,13 @@ function refresh(manual) {
         state.status = 'error'
         state.message = (data && data.error) ? String(data.error) : '获取失败'
         // v781：把宿主的错误码也打到控制台 —— "只登录客户端读不到余额"这类反馈里，
-        //   界面只显示一句人类可读的文案，而 code（NO_KEY / BOTH_FAILED / SHAPE …）才是排查入口。
-        try { console.warn('[dsh-whale] 余额读取失败', (data && data.code) || '', state.message) } catch (err) {}
+        //   界面只显示一句人类可读的文案，而 code（NO_SOURCE / RELAY_FAIL / SHAPE …）才是排查入口。
+        // fork（站点专属）：再无官方回退；失败时宿主可能另附 balanceSourceFallback（来源模型的 id/名字/原因）。
+        var fb = data && data.balanceSourceFallback
+        try {
+          console.warn('[dsh-whale] 余额读取失败', (data && data.code) || '', state.message,
+            fb ? ('｜来源 ' + (fb.name || fb.id || '未知') + ' @ ' + (fb.code || '') + ' ' + (fb.error || '')) : '')
+        } catch (err) {}
         render()
         balanceRetryLater()
       }
@@ -19322,11 +18998,6 @@ var costBubbleActive = false
 var scrollGapOn = false
 var scrollGapPx = 17
 var menuBtnHide = false // 主菜单开关:隐藏挂件菜单按钮,改为右键小鲸鱼唤出菜单
-// issue #116：Codex 本机统计开关。关掉后宿主完全不扫 ~/.codex/sessions（适合会话日志很大的机器）。
-// v748：默认值仍是「开」，但**宿主会先看有没有 Codex 模型** —— 没配就一律按关闭处理，
-// 所以这里保持默认 true 是安全的（不会让没配 Codex 的用户被扫盘），也不会因为一次普通保存
-// 就把老用户的开关写成 false。开关 UI 现只在 Codex 模型的设置子菜单里（见 codexStatsCheckbox）。
-var codexStatsOn = true
 // —— v734（issue #97 / #88）：设置保存的「防覆盖 + 失败可见」——
 // #97 根因：首次 GET 还没落地就 PUT，会把内存里的默认值整包写进服务端（重启后设置被洗成默认值）。
 // #88 根因：这个 PUT 以前是 fire-and-forget，服务端 500 / {ok:false} 完全没人读。
@@ -19382,7 +19053,7 @@ function configPayload() {
   //   宿主白名单、读侧合并、客户端回填都做了，唯独这里没发 ⇒ 宿主 pickB 走"沿用旧值(true)" ⇒ 永远存不住。
   //   与 v863 的 subagent.mute 是同一类"半截活"：新键必须走完 **四件套**
   //   ① 客户端 PUT 载荷 → ② 宿主写侧白名单 → ③ 宿主读侧合并 → ④ 客户端回填。
-  return JSON.stringify({ scale: state.scale, sound: soundOn, pressOn: pressOn !== false, vol: soundVol, soundSet: soundSet, usageMode: usageMode, peakMode: peakMode, bubbleOn: bubbleOn, turnCostOn: turnCostOn, turnCostCloseMs: turnCostCloseMs, scrollGapOn: scrollGapOn, scrollGapPx: scrollGapPx, menuBtnHide: menuBtnHide, codexStatsOn: codexStatsOn })
+  return JSON.stringify({ scale: state.scale, sound: soundOn, pressOn: pressOn !== false, vol: soundVol, soundSet: soundSet, usageMode: usageMode, peakMode: peakMode, bubbleOn: bubbleOn, turnCostOn: turnCostOn, turnCostCloseMs: turnCostCloseMs, scrollGapOn: scrollGapOn, scrollGapPx: scrollGapPx, menuBtnHide: menuBtnHide })
 }
 // 真正的 PUT：读响应 → 失败（网络异常 / HTTP!=200 / {ok:false}）静默重试一次 → 仍失败才提示
 function configPut(payload, retried) {
@@ -19406,7 +19077,7 @@ function saveConfig() {
   // issue #97：加载完成前只记待办，绝不 PUT（否则把默认值整包写进服务端）
   if (!configLoaded) { configSavePending = true; return null }
   try {
-    // 返回 Promise（v743：Codex 统计开关需要"等服务端确认后再刷新"）。
+      // 返回 Promise（v743：设置保存需要'等服务端确认后再刷新'）。
     // configPut 自带重试与失败提示、且链尾有 catch，所以不会有 unhandled rejection。
     var p = configPut(configPayload(), false)
     // 锚点位置记忆：记录相对边框的离边距离，窗口 resize 后保持（localStorage）。
@@ -19440,7 +19111,7 @@ function saveAnchorPos() {
   } catch (err) {}
 }
 function setUsageMode(v) {
-  usageMode = 'ledger' // 小鲸鱼记账为唯一记账方式(token 模式已下线)
+  usageMode = 'ledger' // API3D 记账为唯一记账方式(token 模式已下线)
   saveConfig()
   refresh(false)
 }
@@ -19514,25 +19185,6 @@ function setMenuBtnHide(v) {
   if (menuHideToggle) menuHideToggle.checked = menuBtnHide
   saveConfig()
   applyMenuBtnHideUI()
-}
-// issue #116：Codex 本机统计开关。关掉后宿主不扫描 ~/.codex/sessions；
-// 打开/关闭都要重取一次模型列表，让 Codex 那行的统计/提示立刻跟着变。
-function setCodexStatsOn(v) {
-  codexStatsOn = v !== false
-  if (codexStatsToggle) codexStatsToggle.checked = codexStatsOn
-  var after = function () {
-    // v748：这里原来调的是 openApiModelPanel 内部的局部函数 refreshModelList()，
-    // 在顶层作用域里根本不存在 → 异常被 try/catch 吞掉，"重取模型列表"其实从没发生过。
-    // 现在按别处同一套做法刷新：模型列表 + （若开着）记账子界面，再原地刷新 Codex 用量行
-    // （用量行的文字来自刚取回的模型列表，所以要等回调，不能立刻读旧缓存）
-    try { loadApiModels(refreshOpenCodexRow, true) } catch (err) { refreshOpenCodexRow() }
-    try { if (usagePanelOpen && usageSet !== null) rebuildUsageSubShell() } catch (err) {}
-  }
-  var p = null
-  try { p = saveConfig() } catch (err) {}
-  // 等服务端确认落盘后再重取模型列表：否则可能读到旧配置，那一行会先显示上一次的状态再跳变
-  if (p && typeof p.then === 'function') p.then(after, after)
-  else after()
 }
 function scaleToDisplay(s) {
   return Math.round((s - MIN_SCALE) / ((MAX_SCALE - MIN_SCALE) / 19)) + 1
@@ -19871,6 +19523,18 @@ function pressUp() {
 }
 var menuOpen = false
 var menuClosedAt = 0 // 最近一次关闭菜单的时刻(用于避免"关掉后同一次手势又把它长按打开")
+// fork（API3D 专属）：打开菜单时先确认站点 key —— 没配置就直接盖一层引导遮罩（阻止继续操作）。
+// 数据还没到时先拉一次 api-models.json，回来再判定（避免误弹；拉取失败则不挡）。
+function apiFirstRunGuard() {
+  var missing = apiSiteKeyMissing()
+  if (missing === null) {
+    loadApiModels(function () {
+      try { if (menuOpen && apiSiteKeyMissing() === true) openApiModelPanel(null, { firstRun: true }) } catch (err) {}
+    })
+    return
+  }
+  if (missing === true) openApiModelPanel(null, { firstRun: true })
+}
 function toggleMenu() {
   // v865（issue #237 后半）：打开菜单时补读一次 size 配置（别的端/别的标签改过也能立刻生效）
   try { resyncSizeCfg() } catch (err) {}
@@ -19881,6 +19545,8 @@ function toggleMenu() {
   // 汉堡按钮关闭菜单时同样复位用量子界面(用量态时滑回主菜单态,
   // 主菜单态时 hideUsageSub 守卫直接返回),避免下次打开仍停留在用量视图
   if (!menuOpen) { closeUsagePanel(); closeAboutPanel() }
+  // fork（API3D 专属）：菜单要靠站点余额/记账才有意义 —— 没 key 时用引导遮罩挡住
+  if (menuOpen) apiFirstRunGuard()
 }
 function closeMenu() {
   menuOpen = false
@@ -22122,7 +21788,7 @@ function sizeCfgApply(d) {
       applySoundSet()
     }
     if (d && typeof d.usageMode === 'string') {
-      usageMode = 'ledger' // 旧 token 配置自动视为小鲸鱼记账
+      usageMode = 'ledger' // 旧 token 配置自动视为API3D 记账
     }
     if (d && typeof d.peakMode === 'string' && (d.peakMode === 'liangwen' || d.peakMode === 'qiangqiang')) {
       // 旧版全局峰谷称呼:暂存一次,等泡泡配置就绪后批量写入各峰谷模块
@@ -22155,11 +21821,6 @@ function sizeCfgApply(d) {
     if (d && typeof d.menuBtnHide === 'boolean') {
       menuBtnHide = d.menuBtnHide
       if (menuHideToggle) menuHideToggle.checked = menuBtnHide
-    }
-    // issue #116：Codex 本机统计开关（老配置里没有这个键 → 保持默认「开」）
-    if (d && typeof d.codexStatsOn === 'boolean') {
-      codexStatsOn = d.codexStatsOn
-      if (codexStatsToggle) codexStatsToggle.checked = codexStatsOn
     }
     // 无论服务端带没带这个键都要应用一次：触屏上 ☰ 需要常显（issue #91 缺陷2），
     // 而旧写法只在键存在时才调用，空配置下按钮永远是透明的。

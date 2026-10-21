@@ -56,14 +56,14 @@ const FRONT = [
 
 const BASE = {
   'package.json': JSON.stringify({
-    name: 'dsh-whale-widget',
+    name: 'dsh-api3d-pet',
     version: '0.0.0',
     type: 'module',
     main: 'lib/index.js',
     files: ['lib', 'assets', 'cordis.patch.yml', 'README.md'],
     dsh: { bundle: { patch: './cordis.patch.yml' } },
   }, null, 2),
-  'cordis.patch.yml': '- insert:\n    - id: dsh-whale-widget\n      name: dsh-whale-widget\n',
+  'cordis.patch.yml': '- insert:\n    - id: dsh-api3d-pet\n      name: dsh-api3d-pet\n',
   'README.md': '全部 **2 个** `/dsh-whale/*` 路由都已接入信任栅栏。\n',
   'lib/accounting.mjs': 'export const ok = true\n',
   'lib/index.js': HOST,
